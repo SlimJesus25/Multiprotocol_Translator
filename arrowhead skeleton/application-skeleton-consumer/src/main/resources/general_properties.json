@@ -1,0 +1,26 @@
+{
+  "arrowhead_enabled": "false",
+
+  "default_brokers" :
+    {
+      "mqtt" : {
+        "address" : "localhost",
+        "port" : 1883
+      },
+
+      "kafka" : {
+        "address" : "localhost",
+        "port" : 29092
+      },
+
+      "rabbit": {
+        "address" : "127.0.0.1",
+        "port" : 5672
+      },
+
+      "teste": {
+        "address" : "none",
+        "port" : 0
+      }
+    }
+}

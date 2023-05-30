@@ -1,0 +1,27 @@
+{
+
+  "Producers": [{
+    "internal.id": "device01",
+    "protocol" : "mqtt",
+    "additional.props": {
+      "topic": "test",
+      "connectionTimeout": "20",
+      "qos": 0
+    }
+  }],
+
+  "Consumers": [{
+    "internal.id": "device04",
+    "protocol" : "mqtt",
+    "additional.props": {
+      "client.id" : "aaa",
+      "topic": "ben",
+      "qos": 0
+    }
+  }],
+
+  "Streams": [{
+    "from.producers" : "device01",
+    "to.consumers" : "device04"
+  }]
+}
