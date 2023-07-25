@@ -6,5 +6,5 @@ public interface Repository {
 
     public boolean messageExists(String messageId);
 
-    public void deleteAll();
+    public int getSize();
 }

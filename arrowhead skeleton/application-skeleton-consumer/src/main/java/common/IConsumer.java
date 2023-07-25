@@ -7,6 +7,10 @@ public abstract class IConsumer implements Runnable {
 
     public List<IProducer> producerList;
 
+    protected int numberOfMessages = 0;
+
+    protected String lastMessage = "None";
+
     private ConnectionDetails connectionDetails;
 
     public IConsumer(ConnectionDetails connectionDetails, List<IProducer> producer, Map<String, String> settings) {
@@ -24,6 +28,7 @@ public abstract class IConsumer implements Runnable {
     }
 
     public void OnMessageReceived(String topic, String message) {
+
         for (IProducer producer : producerList) {
             producer.produce(topic,message);
         }
@@ -35,5 +40,13 @@ public abstract class IConsumer implements Runnable {
 
     public void linkProducer(IProducer producer) {
         producerList.add(producer);
+    }
+
+    public int getNumberOfMessages() {
+        return numberOfMessages;
+    }
+
+    public String getLastMessage() {
+        return lastMessage;
     }
 }

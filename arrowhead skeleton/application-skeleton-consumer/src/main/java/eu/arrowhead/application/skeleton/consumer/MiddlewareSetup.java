@@ -5,6 +5,9 @@ import ai.aitia.arrowhead.application.library.ArrowheadService;
 import common.ConnectionDetails;
 import common.IConsumer;
 import common.IProducer;
+import eu.arrowhead.application.skeleton.consumer.classes.kafka.KafkaCustomProducer;
+import eu.arrowhead.application.skeleton.consumer.classes.mqtt.MqttCustomProducer;
+import eu.arrowhead.application.skeleton.consumer.classes.rabbit.RabbitCustomProducer;
 import eu.arrowhead.common.dto.shared.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -45,7 +48,7 @@ public class MiddlewareSetup implements Runnable {
 
     private ArrowheadService service;
 
-    MiddlewareSetup(ArrowheadService service) {
+    public MiddlewareSetup(ArrowheadService service) {
         this.service = service;
     }
 
@@ -119,13 +122,21 @@ public class MiddlewareSetup implements Runnable {
         }
     }
 
-    private ConnectionDetails loadBroker(String broker) throws IOException, JSONException {
+    public ConnectionDetails loadBroker(String broker) throws IOException, JSONException {
 
+        InputStream inputStream;
 
+        if (generalPropertiesFile.exists()) {
+            inputStream = Files.newInputStream(generalPropertiesFile.toPath());
+            logger.info("Loading general from external properties");
+        } else {
+            ClassLoader classLoader = getClass().getClassLoader();
+            inputStream = classLoader.getResourceAsStream("general_properties.json");
+        }
 
-        JSONObject jo = new JSONObject( new JSONTokener(new FileReader("properties3.json")));
+        JSONObject jo = new JSONObject(new JSONTokener(inputStream));
+
         JSONObject defaultBrokers = jo.getJSONObject("default_brokers");
-
 
         return new ConnectionDetails(defaultBrokers.getJSONObject(broker).getString("address"),
                 defaultBrokers.getJSONObject(broker).getInt("port"));
@@ -138,20 +149,34 @@ public class MiddlewareSetup implements Runnable {
      *
      * @param cd the connection details (address and port) for the broker of this producer
      * @param name the name of the broker of this producer, as present in the "producerMap"
-     * @param topic the topic this producer will connect to
      * @param settings the .props field, to be parsed and processed depending on the Producer's type
      * @return the new producer instance
      */
-    private IProducer createProducer(ConnectionDetails cd, String name, String topic, Map<String,String> settings) {
+    private IProducer createProducer(ConnectionDetails cd, String name, Map<String,String> settings) {
         Class<?> c = null;
         try {
             c = Class.forName(producerMap.get(name));
             Constructor<?> cons = c.getConstructor(ConnectionDetails.class, Map.class);
-            return (IProducer) cons.newInstance(cd,settings);
+            return (IProducer) cons.newInstance(cd, settings);
         } catch (ClassNotFoundException | InvocationTargetException | NoSuchMethodException | InstantiationException |
                  IllegalAccessException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private IProducer createProducer2(ConnectionDetails cd, String name, Map<String,String> settings) {
+        IProducer producer = null;
+        switch (name) {
+            case "mqtt":
+                producer = new MqttCustomProducer(cd,settings);
+                break;
+            case "kafka":
+                producer = new KafkaCustomProducer(cd,settings);
+                break;
+            case "rabbit":
+                producer = new RabbitCustomProducer(cd,settings);
+        }
+        return producer;
     }
 
     /**
@@ -162,12 +187,11 @@ public class MiddlewareSetup implements Runnable {
      * @param cd the connection details (address and port) for the broker of this consumer
      * @param producer list of producer instances this consumer will signal to produce whenever they receive a new message
      * @param name the name of the broker of this consumer, as present in the "consumerMap"
-     * @param topic the topic this consumer will connect to
      * @param settings the .props field, to be parsed and processed depending on the Consumer's type
      * @return the new consumer instance
      */
 
-    private IConsumer createConsumer(ConnectionDetails cd, List<IProducer> producer, String name, String topic, Map<String, String> settings) {
+    private IConsumer createConsumer(ConnectionDetails cd, List<IProducer> producer, String name, Map<String, String> settings) {
         Class<?> c = null;
         try {
             c = Class.forName(consumerMap.get(name));
@@ -228,7 +252,7 @@ public class MiddlewareSetup implements Runnable {
                 providers.put(protocol,cd);
             }
 
-            producerMap.put(id,createProducer(providers.get(protocol),protocol,"naoooo",props));
+            producerMap.put(id,createProducer(providers.get(protocol),protocol,props));
         }
 
         // Create consumers for the client's producers
@@ -257,7 +281,7 @@ public class MiddlewareSetup implements Runnable {
                 providers.put(protocol,cd);
             }
 
-            consumerMap.put(id,createConsumer(providers.get(protocol),new ArrayList<IProducer>(),protocol,"nooo",props));
+            consumerMap.put(id,createConsumer(providers.get(protocol),new ArrayList<IProducer>(),protocol,props));
         }
 
 
@@ -323,6 +347,7 @@ public class MiddlewareSetup implements Runnable {
 
             // Can return multiple providers but that's up to the user to guarantee it doesn't happen.
             // We select the 1st
+            System.out.println(response.toString());
 
             ConnectionDetails cd = new ConnectionDetails(response.getResponse().get(0).getProvider().getAddress(),
                     response.getResponse().get(0).getProvider().getPort());

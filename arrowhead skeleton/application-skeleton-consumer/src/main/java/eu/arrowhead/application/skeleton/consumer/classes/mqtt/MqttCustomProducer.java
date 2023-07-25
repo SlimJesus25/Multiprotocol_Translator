@@ -24,12 +24,9 @@ public class MqttCustomProducer extends IProducer {
 
     long thing = System.currentTimeMillis();
 
-    private String publishToTopic;
-
     public MqttCustomProducer(ConnectionDetails connectionDetails, Map<String,String> settings) {
         super(connectionDetails,settings);
         this.settings = new MqttSettings(settings);
-        publishToTopic = this.settings.getTopic();
         connect(connectionDetails.getAddress(),connectionDetails.getPort());
     }
 
@@ -39,20 +36,9 @@ public class MqttCustomProducer extends IProducer {
         log.info("Connected to MQTT at " + address  + ":" + port);
 
         try {
-            client = new MqttClient("tcp://" + address + ":" + port, "200", new MemoryPersistence());
+            client = new MqttClient("tcp://" + address + ":" + port, settings.getClientId(), new MemoryPersistence());
 
-
-            MqttConnectOptions connOpts = new MqttConnectOptions();
-            connOpts.setCleanSession(settings.isCleanSession());
-            connOpts.setKeepAliveInterval(settings.getKeepAliveInternal());
-            connOpts.setConnectionTimeout(settings.getConnectionTimeout());
-            connOpts.setAutomaticReconnect(false);
-
-            client.connect(connOpts);
-
-
-            // log.info("Mqtt publisher connected to " + address + ":" + port + " with topic " + settings.getTopic());
-            // log.info("With Settings \n" + settings);
+            client.connect(settings.getConnectOptions());
         } catch (MqttException e) {
             throw new RuntimeException(e);
         }
@@ -68,31 +54,13 @@ public class MqttCustomProducer extends IProducer {
 
         numberOfMessages++;
 
-
-
-        //ConnectionDetails cd = this.getConnectionDetails();
-
-        /*
         String publishToTopic;
 
-
         if (settings.getTopic().equals("")) {
-            if (!settings.getTopicOfConsumerWithoutPrefix().equals("")) {
-                // Publish to consumer's topic minus the prefix
-
-                publishToTopic = topic.replace(settings.getTopicOfConsumerWithoutPrefix(), "");
-            } else {
-                // Publish to consumer's topic
-
-                publishToTopic = topic;
-            }
+            publishToTopic = this.topicFromConsumer(topic);
         } else {
-            // Publish to set topic
-
             publishToTopic = settings.getTopic();
         }
-        */
-
 
         try {
 
@@ -117,4 +85,18 @@ public class MqttCustomProducer extends IProducer {
             numberOfMessages = 0;
         }
     }
+
+    public int getNumberOfMessages() {
+        return numberOfMessages;
+    }
+
+    public MqttClient getClient() {
+        return client;
+    }
+
+    /*"key.deserializer": "org.apache.kafka.common.serialization.StringDeserializer",
+            "value.deserializer": "org.apache.kafka.common.serialization.StringDeserializer",
+            "group.id": "mid"
+            */
+
 }

@@ -6,6 +6,7 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import common.ConnectionDetails;
 import common.IProducer;
+import eu.arrowhead.application.skeleton.consumer.classes.QoSDatabase.ExactlyOnceProducerHelper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,12 +20,12 @@ public class RabbitCustomProducer extends IProducer {
 
     private org.slf4j.Logger log = LoggerFactory.getLogger(RabbitCustomProducer.class);
 
-
+    private ExactlyOnceProducerHelper exactlyOnceProducerHelper = new ExactlyOnceProducerHelper();
     private Channel channel;
 
     private ConnectionFactory factory;
 
-    private RabbitSettings settings;
+    private RabbitConsumerSettings settings;
 
     private int numberOfMessages = 1;
 
@@ -34,13 +35,14 @@ public class RabbitCustomProducer extends IProducer {
 
     public RabbitCustomProducer(ConnectionDetails connectionDetails, Map<String,String> settings) {
         super(connectionDetails, settings);
-        this.settings = new RabbitSettings(settings);
+        this.settings = new RabbitConsumerSettings(settings);
         connect();
     }
 
     private void connect() {
-        factory = new ConnectionFactory();
+        factory = settings.getRabbitSettings().getConnectionFactory();
         factory.setHost(this.getConnectionDetails().getAddress());
+
         try {
             Connection connection = factory.newConnection();
             channel = connection.createChannel();
@@ -62,24 +64,37 @@ public class RabbitCustomProducer extends IProducer {
 
         numberOfMessages++;
 
+        String queueName;
 
+        if (settings.getQueue().equals("")) {
+            queueName = topicFromConsumer(topic);
+        } else {
+            queueName = settings.getQueue();
+        }
 
         try {
-            String messageId = UUID.randomUUID().toString();
+            String messageId;
+            if (settings.isRandomId()) {
+                messageId = UUID.randomUUID().toString();
+            } else {
+                messageId = message;
+            }
+
             AMQP.BasicProperties properties = new AMQP.BasicProperties.Builder()
                     .messageId(messageId)
                     .build();
 
             if (settings.getQos() != 2) {
-                produceMessage(properties,message);
+                produceMessage(queueName,properties,message);
             } else {
+                channel.confirmSelect();
                 while (!confirmed) {
-                    produceMessage(properties, message);
+                    produceMessage(queueName,properties, message);
                     confirmed = channel.waitForConfirms();
                 }
             }
 
-        } catch (InterruptedException e) {
+        } catch (InterruptedException | IOException e) {
             throw new RuntimeException(e);
         }
 
@@ -92,15 +107,19 @@ public class RabbitCustomProducer extends IProducer {
         }
     }
 
-    private void produceMessage(AMQP.BasicProperties properties, String message) {
+    private void produceMessage(String queueName, AMQP.BasicProperties properties, String message) {
 
         try {
-            channel.basicPublish("", settings.getQueue(), properties, message.getBytes());
+            channel.basicPublish("", queueName, properties, message.getBytes());
 
             // logger.info("Sent Rabbit message to " + this.getConnectionDetails() + "| Message - " + message + ", to default" +
                     // " exchange with routing key " + "\"" + settings.getQueue() + "\"");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public int getNumberOfMessages() {
+        return numberOfMessages;
     }
 }

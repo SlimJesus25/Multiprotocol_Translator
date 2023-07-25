@@ -2,16 +2,18 @@ package eu.arrowhead.application.skeleton.consumer.classes.kafka;
 
 import common.ConnectionDetails;
 import common.IProducer;
+import eu.arrowhead.application.skeleton.consumer.classes.Constants;
+import eu.arrowhead.application.skeleton.consumer.classes.PubSubSettings;
+import eu.arrowhead.application.skeleton.consumer.classes.QoSDatabase.ExactlyOnceProducerHelper;
 import org.apache.kafka.clients.consumer.ConsumerGroupMetadata;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
-import org.apache.kafka.clients.producer.Callback;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.AuthorizationException;
 import org.apache.kafka.common.errors.OutOfOrderSequenceException;
 import org.apache.kafka.common.errors.ProducerFencedException;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,21 +21,20 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.Future;
 
 public class KafkaCustomProducer extends IProducer {
 
     private KafkaProducer<String, String> producer;
-
+    
     private org.slf4j.Logger log = LoggerFactory.getLogger(KafkaCustomProducer.class);
 
-    private KafkaProducerSettings settings;
+    private ProducerConfig producerConfig;
 
     private ConsumerGroupMetadata metadata2;
 
-    private int qos;
-
-    private String topic;
+    private PubSubSettings settings;
 
     private int numberOfMessages = 0;
 
@@ -45,16 +46,42 @@ public class KafkaCustomProducer extends IProducer {
 
     public KafkaCustomProducer(ConnectionDetails connectionDetails, Map<String, String> settings) {
         super(connectionDetails, settings);
-        this.settings = new KafkaProducerSettings(settings);
-        qos = this.settings.getQos();
-        topic = this.settings.getTopic();
+        this.settings = new PubSubSettings(settings);
+        loadDefaults(settings);
+        producerConfig = new ProducerConfig(Constants.objectifyMap(settings));
+
         metadata2 = new ConsumerGroupMetadata(this.settings.getClientId());
         createProducer();
     }
 
+    private void loadDefaults(Map<String,String> settings) {
+        if (!settings.containsKey("key.serializer")) {
+            settings.put("key.serializer","org.apache.kafka.common.serialization.StringSerializer");
+        }
+
+        if (!settings.containsKey("value.serializer")) {
+            settings.put("value.serializer","org.apache.kafka.common.serialization.StringSerializer");
+        }
+    }
+
     @Override
     public void produce(String topic, String message) {
-        final ProducerRecord<String, String> record = new ProducerRecord<>(this.topic, "key", message);
+        String useTopic;
+
+        if (settings.getTopic().equals("")) {
+            useTopic = topicFromConsumer(topic);
+        } else {
+            useTopic = settings.getTopic();
+        }
+
+        String messageId;
+        if (settings.isRandomId()) {
+            messageId = UUID.randomUUID().toString();
+        } else {
+            messageId = message;
+        }
+
+        final ProducerRecord<String, String> record = new ProducerRecord<>(useTopic, messageId, message);
 
         if (numberOfMessages == 1) {
             thing = System.currentTimeMillis();
@@ -96,31 +123,31 @@ public class KafkaCustomProducer extends IProducer {
     public void createProducer() {
 
 
-        Properties config = new Properties();
+        Map<String,Object> config = producerConfig.originals();
 
             ConnectionDetails cd = this.getConnectionDetails();
-            config.put("client.id", settings.getClientId());
             config.put("bootstrap.servers", cd.getAddress() + ":" + cd.getPort());
 
             switch (settings.getQos()) {
                 case 0:
-                    config.put("acks", "0");
+                    config.put(ProducerConfig.ACKS_CONFIG, "0");
                     break;
                 case 2:
-                    config.put("enable.idempotence", "true");
-                    config.put("max.in.flight.requests.per.connection", "1");
+                    config.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, "true");
+                    config.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, "1");
                 case 1:
-                    config.put("acks","all");
+                    config.put(ProducerConfig.ACKS_CONFIG,"all");
                     break;
             }
-
-            config.put("key.serializer",settings.getKeySerializer());
-            config.put("value.serializer",settings.getValueSerializer());
 
             producer = new KafkaProducer<>(config);
 
 
             // logger.info("Kafka Producer connected to " + cd.getAddress() + ":" + cd.getPort() + " with topic " + settings.getTopic());
 
+    }
+
+    public int getNumberOfMessages() {
+        return numberOfMessages;
     }
 }

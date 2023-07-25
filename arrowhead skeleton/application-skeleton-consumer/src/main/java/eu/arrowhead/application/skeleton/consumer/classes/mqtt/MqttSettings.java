@@ -1,97 +1,88 @@
 package eu.arrowhead.application.skeleton.consumer.classes.mqtt;
 
+import eu.arrowhead.application.skeleton.consumer.classes.PubSubSettings;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+
 import java.util.Map;
 
-public class MqttSettings {
+public class MqttSettings extends PubSubSettings {
 
-    private String clientId = String.valueOf((int) (Math.random() * 1000 + 1));
+    private final static String CONNECTION_TIMEOUT = "connection.timeout";
 
-    private boolean cleanSession = true;
+    private final static String CLEAN_SESSION = "clean.session";
 
-    private int keepAliveInternal = 10;
+    private final static String AUTOMATIC_RECONNECT = "automatic.reconnect";
 
-    private int connectionTimeout = 30;
+    private final static String KEEP_ALIVE_INTERNAL = "keep.alive.internal";
 
-    private String topicOfConsumerWithoutPrefix = "";
+    private final static String MQTT_VERSION = "mqtt.version";
 
-    private int qos = 0;
+    private final static String EXECUTOR_SERVICE_TIMEOUT = "executor.service.timeout";
 
-    private String topic = "";
+    private final static String HTTPS_HOSTNAME_VERIFICATION_ENABLED = "https.hostname.verification.enabled";
 
-    public MqttSettings(Map<String,String> settings) {
-        parseSettings(settings);
-    }
+    private final static String MAX_IN_FLIGHT = "max.in.flight";
 
-    private void parseSettings(Map<String,String> settings) {
+    private final static String MAX_RECONNECT_DELAY = "max.reconnect.delay";
 
-        String value = settings.get("cleanSession");
-        if (value!=null) {
-            cleanSession = Boolean.parseBoolean(value);
+    private final static String PASSWORD = "password";
+
+    private final static String SERVER_URI = "server.uri";
+
+    private final static String USERNAME = "user.name";
+
+    private final MqttConnectOptions connectOptions = new MqttConnectOptions();
+
+    public MqttSettings(Map<String,String> settingsMap) {
+        super(settingsMap);
+
+        if (settingsMap.containsKey(CONNECTION_TIMEOUT)) {
+            connectOptions.setConnectionTimeout(Integer.parseInt(settingsMap.get(CONNECTION_TIMEOUT)));
         }
 
-        value = settings.get("clientId");
-        if (value!=null) {
-            clientId = value;
+        if (settingsMap.containsKey(CLEAN_SESSION)) {
+            connectOptions.setCleanSession(Boolean.parseBoolean(settingsMap.get(CLEAN_SESSION)));
         }
 
-        value = settings.get("keepAliveInternal");
-        if (value!=null) {
-            keepAliveInternal = Integer.parseInt(value);
+        if (settingsMap.containsKey(AUTOMATIC_RECONNECT)) {
+            connectOptions.setAutomaticReconnect(Boolean.parseBoolean(settingsMap.get(AUTOMATIC_RECONNECT)));
         }
 
-        value = settings.get("connectionTimeout");
-        if (value!=null) {
-            connectionTimeout = Integer.parseInt(value);
+        if (settingsMap.containsKey(KEEP_ALIVE_INTERNAL)) {
+            connectOptions.setKeepAliveInterval(Integer.parseInt(settingsMap.get(KEEP_ALIVE_INTERNAL)));
         }
 
-        value = settings.get("topicOfConsumerWithoutPrefix");
-        if (value!=null) {
-            topicOfConsumerWithoutPrefix = value;
+        if (settingsMap.containsKey(MQTT_VERSION)) {
+            connectOptions.setMqttVersion(Integer.parseInt(settingsMap.get(MQTT_VERSION)));
         }
 
-        value = settings.get("qos");
-        if (value!=null) {
-            qos = Integer.parseInt(value);
+        if (settingsMap.containsKey(EXECUTOR_SERVICE_TIMEOUT)) {
+            connectOptions.setExecutorServiceTimeout(Integer.parseInt(settingsMap.get(EXECUTOR_SERVICE_TIMEOUT)));
         }
 
-        value = settings.get("topic");
-        if (value!=null) {
-            topic = value;
-        } else {
-            throw new RuntimeException("Please define a topic for your MQTT instance");
+        if (settingsMap.containsKey(HTTPS_HOSTNAME_VERIFICATION_ENABLED)){
+            connectOptions.setHttpsHostnameVerificationEnabled(Boolean.parseBoolean(settingsMap.get(HTTPS_HOSTNAME_VERIFICATION_ENABLED)));
+        }
+
+        if (settingsMap.containsKey(MAX_IN_FLIGHT)) {
+            connectOptions.setMaxInflight(Integer.parseInt(settingsMap.get(MAX_IN_FLIGHT)));
+        }
+
+        if (settingsMap.containsKey(MAX_RECONNECT_DELAY)) {
+            connectOptions.setMaxReconnectDelay(Integer.parseInt(settingsMap.get(MAX_RECONNECT_DELAY)));
+        }
+
+        if (settingsMap.containsKey(PASSWORD) && settingsMap.containsKey(USERNAME)) {
+            connectOptions.setPassword(settingsMap.get(PASSWORD).toCharArray());
+            connectOptions.setUserName(settingsMap.get(USERNAME));
+        }
+
+        if (settingsMap.containsKey(SERVER_URI)) {
+            connectOptions.setServerURIs(new String[]{settingsMap.get(SERVER_URI)});
         }
     }
 
-    public int getConnectionTimeout() {
-        return connectionTimeout;
-    }
-
-    public int getKeepAliveInternal() {
-        return keepAliveInternal;
-    }
-
-    public boolean isCleanSession() {
-        return cleanSession;
-    }
-
-    public String getTopicOfConsumerWithoutPrefix() {
-        return topicOfConsumerWithoutPrefix;
-    }
-
-    public int getQos() {
-        return qos;
-    }
-
-    public String getTopic() {
-        return topic;
-    }
-
-    @Override
-    public String toString() {
-        return "Clean Session - " + cleanSession +
-                "\nKeep Alive Internal - " + keepAliveInternal +
-                "\nConnection Timeout - " + connectionTimeout +
-                "\nP/C from topic of its pair, but removing: " + "\"" + topicOfConsumerWithoutPrefix + "\"" +
-                "\nQOS - " + qos;
+    public MqttConnectOptions getConnectOptions() {
+        return connectOptions;
     }
 }

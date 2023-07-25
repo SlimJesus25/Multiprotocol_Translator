@@ -1,5 +1,7 @@
 package eu.arrowhead.application.skeleton.consumer.classes.QoSDatabase;
 
+import eu.arrowhead.application.skeleton.consumer.classes.Constants;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,16 +11,9 @@ public class JavaRepository implements Repository {
 
     @Override
     public boolean registerNewMessage(String messageId) {
-        /*
-        boolean ret = database.add(messageId);
-
-        if (database.size() > 1000) {
-            deleteAll();
+        if (database.size() > Constants.MAX_UNIQUE_MESSAGES) {
+            database.remove(0);
         }
-
-        return ret;
-         */
-
         return database.add(messageId);
     }
 
@@ -28,7 +23,7 @@ public class JavaRepository implements Repository {
     }
 
     @Override
-    public void deleteAll() {
-        database = new ArrayList<>();
+    public int getSize() {
+        return database.size();
     }
 }

@@ -13,6 +13,7 @@ import java.util.Map;
 
 public class MqttCustomConsumer extends IConsumer {
 
+    private MqttClient mqttClient;
     private final IMqttMessageListener messageListener;
 
     private MqttSettings settings;
@@ -33,21 +34,16 @@ public class MqttCustomConsumer extends IConsumer {
     private void connect(String address, int port) {
         try {
             String topic = settings.getTopic();
+            mqttClient = new MqttClient("tcp://" + address + ":" + port, settings.getClientId(), new MemoryPersistence());
 
-            logger.info("Mqtt consumer connected to " + address + ":" + port);
-            MqttClient client = new MqttClient("tcp://" + address + ":" + port, "100", new MemoryPersistence());
 
-            MqttConnectOptions connOpts = new MqttConnectOptions();
-            connOpts.setCleanSession(false);
-            connOpts.setKeepAliveInterval(60);
-            connOpts.setConnectionTimeout(70);
-            connOpts.setAutomaticReconnect(true);
+            mqttClient.connect(settings.getConnectOptions());
 
-            client.connect(connOpts);
+            logger.info("Mqtt consumer connected to " + address + ":" + port + " with topic " + settings.getTopic());
 
-            client.subscribe(topic,messageListener);
+            mqttClient.subscribe(topic,messageListener);
 
-            // logger.info("Successfully subscribed to MQTT on address " + address + ":" + port + " with topic " + topic);
+
         } catch (MqttException e) {
             throw new RuntimeException(e);
         }
@@ -64,11 +60,15 @@ public class MqttCustomConsumer extends IConsumer {
 
         @Override
         public void messageArrived(String s, MqttMessage mqttMessage) throws Exception {
-
-
             // logger.info("Message arrived at mqtt " + consumer.getConnectionDetails() + " at topic " + s + " with content \"" + mqttMessage.toString() + "\"");
+            consumer.lastMessage = mqttMessage.toString();
+            consumer.numberOfMessages++;
+
             consumer.OnMessageReceived(s,mqttMessage.toString());
         }
     }
 
+    public MqttClient getMqttClient() {
+        return mqttClient;
+    }
 }

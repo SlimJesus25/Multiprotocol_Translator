@@ -5,17 +5,18 @@
     "protocol" : "mqtt",
     "additional.props": {
       "topic": "test",
-      "connectionTimeout": "20",
-      "qos": 0
+      "connection.timeout": 20,
+      "qos": 0,
+      "client.id": "middleware-consumer"
     }
   }],
 
   "Consumers": [{
     "internal.id": "device04",
-    "protocol" : "mqtt",
+    "protocol" : "kafka",
     "additional.props": {
-      "client.id" : "aaa",
-      "topic": "ben",
+      "topic": "test",
+      "client.id" : "middleware-producer",
       "qos": 0
     }
   }],
