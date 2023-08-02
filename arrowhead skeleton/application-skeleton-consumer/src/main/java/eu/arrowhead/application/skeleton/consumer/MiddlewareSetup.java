@@ -40,7 +40,7 @@ public class MiddlewareSetup implements Runnable {
 
     private final Logger logger = LogManager.getLogger(MiddlewareSetup.class);
 
-    private String externalPropertiesFile = "properties/properties3.json";
+    private String externalPropertiesFile = "properties/properties.json";
     private String externalGeneralPropertiesFile = "properties/general_properties.json";
     private File propertiesFile = new File(externalPropertiesFile);
     private File generalPropertiesFile = new File(externalGeneralPropertiesFile);
@@ -218,7 +218,7 @@ public class MiddlewareSetup implements Runnable {
             logger.info("Loading devices from external properties");
         } else {
             ClassLoader classLoader = getClass().getClassLoader();
-            inputStream = classLoader.getResourceAsStream("properties3.json");
+            inputStream = classLoader.getResourceAsStream("properties.json");
         }
 
         JSONObject jo = new JSONObject(new JSONTokener(inputStream));
