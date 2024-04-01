@@ -1,5 +1,5 @@
 {
-  "arrowhead_enabled": "true",
+  "arrowhead_enabled": "false",
 
   "default_brokers" :
     {
@@ -10,12 +10,12 @@
 
       "kafka" : {
         "address" : "localhost",
-        "port" : 29092
+        "port" : 9092
       },
 
       "rabbit": {
         "address" : "127.0.0.1",
-        "port" : 5672
+        "port" : 15672
       },
 
       "teste": {

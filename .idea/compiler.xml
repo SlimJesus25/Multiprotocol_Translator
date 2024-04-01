@@ -12,6 +12,7 @@
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="application-skeleton-java-spring" options="-parameters" />
       <module name="arrowhead-application-skeleton-consumer" options="-parameters" />
     </option>
   </component>

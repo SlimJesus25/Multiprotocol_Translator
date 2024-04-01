@@ -7,7 +7,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
-
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +27,7 @@ public class MqttCustomConsumer extends IConsumer {
 
     @Override
     public void run() {
+        // logger.info("ACABEI DE SER INICIADO! MQTT");
         connect(getConnectionDetails().getAddress(),getConnectionDetails().getPort());
     }
 

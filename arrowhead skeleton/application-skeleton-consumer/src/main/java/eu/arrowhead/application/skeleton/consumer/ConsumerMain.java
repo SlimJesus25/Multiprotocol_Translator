@@ -8,9 +8,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.http.HttpMethod;
-
 import ai.aitia.arrowhead.application.library.ArrowheadService;
 import eu.arrowhead.common.CommonConstants;
 import eu.arrowhead.common.dto.shared.OrchestrationFlags.Flag;
@@ -20,9 +18,6 @@ import eu.arrowhead.common.dto.shared.OrchestrationResponseDTO;
 import eu.arrowhead.common.dto.shared.OrchestrationResultDTO;
 import eu.arrowhead.common.dto.shared.ServiceQueryFormDTO;
 import eu.arrowhead.common.exception.ArrowheadException;
-
-import javax.annotation.Resource;
-import java.util.Map;
 
 @SpringBootApplication
 @ComponentScan(basePackages = {CommonConstants.BASE_PACKAGE, "ai.aitia", "common", "kafka"}) //TODO: add custom packages if any
@@ -36,21 +31,15 @@ public class ConsumerMain implements ApplicationRunner {
 
     
 	private final Logger logger = LogManager.getLogger( ConsumerMain.class );
-    
-    //=================================================================================================
-	// methods
 
-	//------------------------------------------------------------------------------------------------
     public static void main( final String[] args ) {
     	SpringApplication.run(ConsumerMain.class, args);
     }
 
-    //-------------------------------------------------------------------------------------------------
     @Override
-	public void run(final ApplicationArguments args) throws Exception {
+	public void run(final ApplicationArguments args) {
 		//SIMPLE EXAMPLE OF INITIATING AN ORCHESTRATION
 
-    	
     	final Builder orchestrationFormBuilder = arrowheadService.getOrchestrationFormBuilder();
     	
     	final ServiceQueryFormDTO requestedService = new ServiceQueryFormDTO();
@@ -71,7 +60,6 @@ public class ConsumerMain implements ApplicationRunner {
 		}
     	
     	//EXAMPLE OF CONSUMING THE SERVICE FROM A CHOSEN PROVIDER
-    	
     	if (response == null || response.getResponse().isEmpty()) {
     		//If no proper providers found during the orchestration process, then the response list will be empty. Handle the case as you wish!
     		logger.debug("Orchestration response is empty");
@@ -91,7 +79,7 @@ public class ConsumerMain implements ApplicationRunner {
 		}
     	final Object payload = null; //Can be null if not specified in the description of the service.
     	
-    	final String consumedService = arrowheadService.consumeServiceHTTP(String.class, httpMethod, address, port, serviceUri, interfaceName, token, payload, "testkey", "testvalue");
+    	arrowheadService.consumeServiceHTTP(String.class, httpMethod, address, port, serviceUri, interfaceName, token, payload, "testkey", "testvalue");
 
 	}
 }

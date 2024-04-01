@@ -11,7 +11,6 @@ import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import java.time.Duration;
 import java.util.*;
 
@@ -54,6 +53,7 @@ public class KafkaCustomConsumer extends IConsumer {
 
     @Override
     public void run() {
+        logger.info("ACABEI DE SER INICIADO! KAFKA");
         createConsumer();
         subscribe();
     }

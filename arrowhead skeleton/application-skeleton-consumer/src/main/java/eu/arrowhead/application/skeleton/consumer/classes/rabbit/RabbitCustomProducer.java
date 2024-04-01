@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RabbitCustomProducer extends IProducer {
 
@@ -30,6 +31,8 @@ public class RabbitCustomProducer extends IProducer {
     private int numberOfMessages = 1;
 
     private long thing;
+
+    private final Object mutex = new Object();
 
     private final Logger logger = LogManager.getLogger(RabbitCustomProducer.class);
 
@@ -66,6 +69,7 @@ public class RabbitCustomProducer extends IProducer {
 
         String queueName;
 
+        // In case queue name is not referred, it will be produced to the same name as topic/queue as the producer.
         if (settings.getQueue().equals("")) {
             queueName = topicFromConsumer(topic);
         } else {
@@ -84,8 +88,39 @@ public class RabbitCustomProducer extends IProducer {
                     .messageId(messageId)
                     .build();
 
-            if (settings.getQos() != 2) {
-                produceMessage(queueName,properties,message);
+            AtomicBoolean flag = new AtomicBoolean(true);
+
+            if(settings.getQos() == 1){
+
+                channel.confirmSelect();
+
+                channel.addConfirmListener((sequenceNumber, multiple) -> {
+                    synchronized (this.mutex) {
+                        logger.info("RabbitMQ: Mensage sent with QoS 1! " + Thread.currentThread().getName());
+                        flag.set(false);
+                    }
+                    }, (sequenceNumber, multiple) -> {
+                    synchronized (this.mutex) {
+                        logger.info("RabbitMQ: Mensage NOT sent with QoS 1! " + Thread.currentThread().getName());
+                        flag.set(false);
+                    }
+
+                });
+
+                int retries = 5;
+                while(retries-- >= 0){
+                    synchronized (this.mutex) {
+                        if(flag.get()) {
+                            logger.info("Thread info: " + Thread.currentThread().getName());
+                            produceMessage(queueName, properties, message);
+                        }
+                    }
+                }
+
+            }
+
+            if (settings.getQos() == 0) {
+                produceMessage(queueName, properties, message);
             } else {
                 channel.confirmSelect();
                 while (!confirmed) {

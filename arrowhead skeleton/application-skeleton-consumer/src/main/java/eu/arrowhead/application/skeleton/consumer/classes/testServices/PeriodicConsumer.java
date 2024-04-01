@@ -5,7 +5,6 @@ import common.IConsumer;
 import common.IProducer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import java.util.List;
 import java.util.Map;
 
@@ -15,7 +14,8 @@ public class PeriodicConsumer extends IConsumer {
 
     private final String topic;
 
-    public PeriodicConsumer(ConnectionDetails connectionDetails, List<IProducer> producer, String topic, Map<String, String> settings) {
+    public PeriodicConsumer(ConnectionDetails connectionDetails, List<IProducer> producer, String topic, Map<String,
+            String> settings) {
         super(connectionDetails, producer, settings);
         this.topic = topic;
         logger.info("Creating new periodic consumer... ");
@@ -43,6 +43,4 @@ public class PeriodicConsumer extends IConsumer {
             }
         }
     }
-
-
 }

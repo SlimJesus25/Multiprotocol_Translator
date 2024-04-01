@@ -1,0 +1,32 @@
+module ApplicationConfig
+
+/// The name of the application.
+name: String
+
+/// The port on which the application listens.
+port: UInt16
+
+/// The database configuration.
+database: Database
+
+class Database {
+  /// The database host.
+  host: String
+
+  /// The database user.
+  user: String
+
+  /// The database password at least 8 characters long
+  password: String(isBetween(8, 40))
+}
+
+/// Instance of ApplicationConfig with actual configuration values.
+applicationConfig {
+  name = "My application"
+  port = 8080
+  database {
+    host = "localhost"
+    user = "root"
+    password = "password"
+  }
+}

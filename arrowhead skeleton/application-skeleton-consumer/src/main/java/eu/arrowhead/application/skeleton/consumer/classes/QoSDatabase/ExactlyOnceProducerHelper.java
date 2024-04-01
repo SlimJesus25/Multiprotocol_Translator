@@ -1,9 +1,5 @@
 package eu.arrowhead.application.skeleton.consumer.classes.QoSDatabase;
 
-import org.apache.kafka.common.utils.Java;
-
-import java.util.Random;
-
 public class ExactlyOnceProducerHelper {
 
     private static final String ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";

@@ -64,11 +64,13 @@ public class MqttCustomProducer extends IProducer {
 
         try {
 
-            if (!client.isConnected()) client.connect();
+            if (!client.isConnected())
+                client.connect();
             // log.info("Publishing mqtt Message to " + cd + " at topic " + publishToTopic);
             // log.info("Message content - " + message + "\n");
 
             MqttMessage mqttMessage = new MqttMessage(message.getBytes());
+            MqttConnectOptions conn = new MqttConnectOptions();
             mqttMessage.setQos(settings.getQos());
             client.publish(publishToTopic,mqttMessage);
 

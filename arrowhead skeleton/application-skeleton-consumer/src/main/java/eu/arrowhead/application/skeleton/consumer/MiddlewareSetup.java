@@ -1,6 +1,5 @@
 package eu.arrowhead.application.skeleton.consumer;
 
-
 import ai.aitia.arrowhead.application.library.ArrowheadService;
 import common.ConnectionDetails;
 import common.IConsumer;
@@ -11,15 +10,12 @@ import eu.arrowhead.application.skeleton.consumer.classes.rabbit.RabbitCustomPro
 import eu.arrowhead.common.dto.shared.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.stereotype.Component;
-
-
 import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -31,21 +27,14 @@ import java.util.*;
 public class MiddlewareSetup implements Runnable {
 
     private Map<String,String> consumerMap = new HashMap<>();
-
     private Map<String,String> producerMap = new HashMap<>();
-
     private List<IConsumer> consumerInstances = new ArrayList<>();
-
     private Map<String,ConnectionDetails> providers = new HashMap<>();
-
     private final Logger logger = LogManager.getLogger(MiddlewareSetup.class);
-
-    private String externalPropertiesFile = "properties/properties.json";
-    private String externalGeneralPropertiesFile = "properties/general_properties.json";
+    private String externalPropertiesFile = "../resources/properties.json";
+    private String externalGeneralPropertiesFile = "../resources/general_properties.json";
     private File propertiesFile = new File(externalPropertiesFile);
     private File generalPropertiesFile = new File(externalGeneralPropertiesFile);
-
-
     private ArrowheadService service;
 
     public MiddlewareSetup(ArrowheadService service) {
@@ -74,8 +63,6 @@ public class MiddlewareSetup implements Runnable {
     private void createMaps() {
         logger.info("Loading initial configs");
 
-
-
         consumerMap.put("mqtt","eu.arrowhead.application.skeleton.consumer.classes.mqtt.MqttCustomConsumer");
         consumerMap.put("teste","eu.arrowhead.application.skeleton.consumer.classes.testServices.PeriodicConsumer");
         consumerMap.put("kafka","eu.arrowhead.application.skeleton.consumer.classes.kafka.KafkaCustomConsumer");
@@ -89,12 +76,9 @@ public class MiddlewareSetup implements Runnable {
 
     /**
      * Loads brokers from default configuration in "general_properties"
-     *
      * @throws FileNotFoundException
-
      * @throws JSONException
      */
-
     private void loadDefaultBrokers() throws IOException, JSONException {
         InputStream inputStream;
 
@@ -107,16 +91,13 @@ public class MiddlewareSetup implements Runnable {
         }
 
         JSONObject jo = new JSONObject(new JSONTokener(inputStream));
-
         JSONObject defaultBrokers = jo.getJSONObject("default_brokers");
-
 
         if (!jo.getBoolean("arrowhead_enabled")) {
             for (Iterator it = defaultBrokers.keys(); it.hasNext();) {
                 String o = (String) it.next();
 
-
-                providers.put(o,new ConnectionDetails(defaultBrokers.getJSONObject(o).getString("address"),
+                providers.put(o, new ConnectionDetails(defaultBrokers.getJSONObject(o).getString("address"),
                         defaultBrokers.getJSONObject(o).getInt("port")));
             }
         }
@@ -135,7 +116,6 @@ public class MiddlewareSetup implements Runnable {
         }
 
         JSONObject jo = new JSONObject(new JSONTokener(inputStream));
-
         JSONObject defaultBrokers = jo.getJSONObject("default_brokers");
 
         return new ConnectionDetails(defaultBrokers.getJSONObject(broker).getString("address"),
@@ -153,7 +133,7 @@ public class MiddlewareSetup implements Runnable {
      * @return the new producer instance
      */
     private IProducer createProducer(ConnectionDetails cd, String name, Map<String,String> settings) {
-        Class<?> c = null;
+        Class<?> c;
         try {
             c = Class.forName(producerMap.get(name));
             Constructor<?> cons = c.getConstructor(ConnectionDetails.class, Map.class);
@@ -192,7 +172,7 @@ public class MiddlewareSetup implements Runnable {
      */
 
     private IConsumer createConsumer(ConnectionDetails cd, List<IProducer> producer, String name, Map<String, String> settings) {
-        Class<?> c = null;
+        Class<?> c;
         try {
             c = Class.forName(consumerMap.get(name));
             Constructor<?> cons = c.getConstructor(ConnectionDetails.class,List.class, Map.class);
@@ -227,9 +207,7 @@ public class MiddlewareSetup implements Runnable {
         Map<String, IConsumer> consumerMap = new HashMap<>();
 
         // Create producers for the client's consumers
-
         JSONArray clientConsumers = jo.getJSONArray("Consumers");
-
         logger.info("Loading client consumers");
 
         for (int i = 0; i < clientConsumers.length(); i++) {

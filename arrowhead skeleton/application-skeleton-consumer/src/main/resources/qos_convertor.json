@@ -1,0 +1,94 @@
+{
+  "kafka" : {
+    "mqtt": {
+      "qos": {
+        "0": {"acks" : 0, "enable.idempotence" :  false, "retries" : 0, "batch.size" : 16384, "linger.ms" : 0, "compression.type" : "none", "enable.auto.commit" : false, "auto.offset.reset" : "latest"},
+        "1": {"acks" : 1, "enable.idempotence" :  false, "retries" : 10, "batch.size" : 16384, "linger.ms" : 0, "compression.type" : "none", "enable.auto.commit" : false, "auto.offset.reset" : "latest"},
+        "2": {"acks" : "all", "enable.idempotence" : true, "retries" : 10, "batch.size" : 16384, "linger.ms" : 0, "max_in_flight_requests_per_connections" : 5, "compression.type" : "none", "enable.auto.commit" : false, "auto.offset.reset" : "latest"}
+      }
+    },
+    "rabbit": {
+      "qos": {
+        "0": {"acks" : 0, "enable.idempotence" :  false, "retries" : 0, "batch.size" : 16384, "linger.ms" : 0, "compression.type" : "none", "enable.auto.commit" : false, "auto.offset.reset" : "latest"},
+        "1": {"acks" : 1, "enable.idempotence" :  false, "retries" : 10, "batch.size" : 16384, "linger.ms" : 0, "compression.type" : "none", "enable.auto.commit" : false, "auto.offset.reset" : "latest"},
+        "2": {"acks" : "all", "enable.idempotence" : true, "retries" : 10, "batch.size" : 16384, "linger.ms" : 0, "max_in_flight_requests_per_connections" : 5, "compression.type" : "none", "enable.auto.commit" : false, "auto.offset.reset" : "latest"}
+      }
+    },
+    "dds": {
+      "qos": {
+        "0": {"acks" : 0, "enable.idempotence" :  false, "retries" : 0, "batch.size" : 16384, "linger.ms" : 0, "compression.type" : "none", "enable.auto.commit" : false, "auto.offset.reset" : "latest"},
+        "1": {"acks" : 1, "enable.idempotence" :  false, "retries" : 10, "batch.size" : 16384, "linger.ms" : 0, "compression.type" : "none", "enable.auto.commit" : false, "auto.offset.reset" : "latest"},
+        "2": {"acks" : "all", "enable.idempotence" : true, "retries" : 10, "batch.size" : 16384, "linger.ms" : 0, "max_in_flight_requests_per_connections" : 5, "compression.type" : "none", "enable.auto.commit" : false, "auto.offset.reset" : "latest"}
+      }
+    }
+  },
+    "mqtt" : {
+      "kafka": {
+        "qos": {
+          "0": {"qos" : 0, "mutable" :  true, "retained" :  false, "dup" :  false, "clean_session" : true},
+          "1": {"qos" : 1, "mutable" :  true, "retained" :  true, "dup" :  true, "clean_session" : true},
+          "2": {"qos" : 2, "mutable" :  true, "retained" :  true, "dup" :  false, "clean_session" : false}
+        }
+      },
+      "rabbit": {
+        "qos": {
+          "0": {"qos" : 0, "mutable" :  true, "retained" :  false, "dup" :  false, "clean_session" : true},
+          "1": {"qos" : 1, "mutable" :  true, "retained" :  true, "dup" :  true, "clean_session" : true},
+          "2": {"qos" : 2, "mutable" :  true, "retained" :  true, "dup" :  false, "clean_session" : false}
+        }
+      },
+      "dds": {
+        "qos": {
+          "0": {"qos" : 0, "mutable" :  true, "retained" :  false, "dup" :  false, "clean_session" : true},
+          "1": {"qos" : 1, "mutable" :  true, "retained" :  true, "dup" :  true, "clean_session" : true},
+          "2": {"qos" : 2, "mutable" :  true, "retained" :  true, "dup" :  false, "clean_session" : false}
+        }
+      }
+    },
+  "rabbit" : {
+    "mqtt": {
+      "qos": {
+        "0": {"durable" :  false, "priority" :  4, "deliveryMode" : 1},
+        "1": {"durable" :  true, "priority" :  9, "deliveryMode" : 2},
+        "2": {"durable" :  true, "priority" :  9, "deliveryMode" : 2}
+      }
+    },
+    "kafka": {
+      "qos": {
+        "0": {"durable" :  false, "priority" :  4, "deliveryMode" : 1},
+        "1": {"durable" :  true, "priority" :  9, "deliveryMode" : 2},
+        "2": {"durable" :  true, "priority" :  9, "deliveryMode" : 2}
+      }
+    },
+    "dds": {
+      "qos": {
+        "0": {"durable" :  false, "priority" :  4, "deliveryMode" : 1},
+        "1": {"durable" :  true, "priority" :  9, "deliveryMode" : 2},
+        "2": {"durable" :  true, "priority" :  9, "deliveryMode" : 2}
+      }
+    }
+  },
+  "dds" : {
+    "mqtt": {
+      "qos": {
+        "0": {"RELIABILITY.kind" : "BEST_EFFORT", "DESTINATION_ORDER.kind" : "BY_RECEPTION_TIMESTAMP", "HISTORY.kind" : "KEEP_LAST"},
+        "1": {"RELIABILITY.kind" : "RELIABLE", "DESTINATION_ORDER.kind" : "BY_RECEPTION_TIMESTAMP", "HISTORY.kind" : "KEEP_LAST"},
+        "2": {"RELIABILITY.kind" : "RELIABLE", "DESTINATION_ORDER.kind" : "BY_RECEPTION_TIMESTAMP", "HISTORY.kind" : "KEEP_LAST"}
+      }
+    },
+    "rabbit": {
+      "qos": {
+        "0": {"RELIABILITY.kind" : "BEST_EFFORT", "DESTINATION_ORDER.kind" : "BY_RECEPTION_TIMESTAMP", "HISTORY.kind" : "KEEP_LAST"},
+        "1": {"RELIABILITY.kind" : "RELIABLE", "DESTINATION_ORDER.kind" : "BY_RECEPTION_TIMESTAMP", "HISTORY.kind" : "KEEP_LAST"},
+        "2": {"RELIABILITY.kind" : "RELIABLE", "DESTINATION_ORDER.kind" : "BY_RECEPTION_TIMESTAMP", "HISTORY.kind" : "KEEP_LAST"}
+      }
+    },
+    "kafka": {
+      "qos": {
+        "0": {"RELIABILITY.kind" : "BEST_EFFORT", "DESTINATION_ORDER.kind" : "BY_RECEPTION_TIMESTAMP", "HISTORY.kind" : "KEEP_LAST"},
+        "1": {"RELIABILITY.kind" : "RELIABLE", "DESTINATION_ORDER.kind" : "BY_RECEPTION_TIMESTAMP", "HISTORY.kind" : "KEEP_LAST"},
+        "2": {"RELIABILITY.kind" : "RELIABLE", "DESTINATION_ORDER.kind" : "BY_RECEPTION_TIMESTAMP", "HISTORY.kind" : "KEEP_LAST"}
+      }
+    }
+  }
+}

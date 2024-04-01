@@ -1,28 +1,75 @@
 {
-
   "Producers": [{
-    "internal.id": "device01",
-    "protocol" : "mqtt",
-    "additional.props": {
-      "topic": "test",
-      "connection.timeout": 20,
-      "qos": 0,
-      "client.id": "middleware-consumer"
-    }
-  }],
-
-  "Consumers": [{
-    "internal.id": "device04",
+    "internal.id": "device02",
     "protocol" : "kafka",
     "additional.props": {
-      "topic": "test",
-      "client.id" : "middleware-producer",
-      "qos": 0
+      "topic": "kafka_topic",
+      "connection.timeout": 20,
+      "qos": 1,
+      "client.id": "middleware-consumer"
     }
-  }],
+  },
+    {
+      "internal.id": "device03",
+      "protocol" : "kafka",
+      "additional.props": {
+        "topic": "temperature",
+        "connection.timeout": 20,
+        "qos": 1,
+        "client.id": "middleware-consumer"
+      }
+    }
+  ],
+  "Consumers": [
+    {
+      "internal.id": "device05",
+      "protocol" : "mqtt",
+      "additional.props": {
+        "topic": "rabbit_topic",
+        "client.id" : "middleware-producer",
+        "qos": 2
+      }
+    },
+    {
+      "internal.id": "device06",
+      "protocol" : "mqtt",
+      "additional.props": {
+        "topic": "mqtt_topic",
+        "client.id" : "middleware-producer",
+        "qos": 2
+      }
+    },
+    {
+      "internal.id": "device07",
+      "protocol" : "rabbit",
+      "additional.props": {
+        "queue": "test123",
+        "client.id" : "middleware-producer",
+        "qos": 1
+      }
+    }],
 
   "Streams": [{
-    "from.producers" : "device01",
-    "to.consumers" : "device04"
-  }]
+    "from.producers" : "device02",
+    "to.consumers" : "device05"
+  },
+    {
+      "from.producers" : "device02",
+      "to.consumers" : "device06"
+    },
+    {
+      "from.producers" : "device03",
+      "to.consumers" : "device05"
+    },
+    {
+      "from.producers" : "device03",
+      "to.consumers" : "device06"
+    },{
+      "from.producers" : "device02",
+      "to.consumers" : "device07"
+    },{
+      "from.producers" : "device03",
+      "to.consumers" : "device07"
+    }
+  ]
 }

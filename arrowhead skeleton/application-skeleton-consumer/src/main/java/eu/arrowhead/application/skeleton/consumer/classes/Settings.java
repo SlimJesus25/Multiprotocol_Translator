@@ -15,7 +15,7 @@ public class Settings {
 
     private void defineQos(String qos) {
         if (qos!=null)
-        this.qos = Integer.parseInt(qos);
+            this.qos = Integer.parseInt(qos);
     }
 
     private void defineIdentifierGenerator(String identifierGen) {

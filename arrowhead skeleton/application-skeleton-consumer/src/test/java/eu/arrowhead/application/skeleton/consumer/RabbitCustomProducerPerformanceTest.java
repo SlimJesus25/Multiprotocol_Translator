@@ -18,7 +18,7 @@ class RabbitCustomProducerPerformanceTest {
         settings.put("queue","mesa");
         settings.put("client.id","client03");
         settings.put("qos","0");
-        producer = new RabbitCustomProducer(new ConnectionDetails("192.168.0.104",5672),settings);
+        producer = new RabbitCustomProducer(new ConnectionDetails("127.0.0.1",15672),settings);
 
         float timeS = System.nanoTime();
         produce();

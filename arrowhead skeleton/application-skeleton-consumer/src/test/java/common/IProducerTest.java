@@ -13,8 +13,6 @@ class IProducerTest {
 
     IProducer producer;
 
-
-
     @BeforeEach
     void setUp() {
         Map<String,String> settings = new HashMap<>();

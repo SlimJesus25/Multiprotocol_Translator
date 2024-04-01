@@ -32,15 +32,29 @@
 			<groupId>ai.aitia</groupId>
 			<artifactId>arrowhead-application-library-java-spring</artifactId>
 			<version>4.4.0.2</version>
-		</dependency>		
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse.cyclonedds</groupId>
+			<artifactId>cyclonedds</artifactId>
+			<version>0.9.0</version>
+		</dependency>
 	</dependencies>
-	
+
 	<build>
 		<plugins>
 			<plugin>
     			<groupId>org.springframework.boot</groupId>
     			<artifactId>spring-boot-maven-plugin</artifactId>
-  			</plugin>  			  			
+  			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.8.1</version>
+				<configuration>
+					<source>${maven.compiler.source}</source>
+					<target>${maven.compiler.target}</target>
+				</configuration>
+			</plugin>
   		</plugins>
   	</build>	
 </project>
