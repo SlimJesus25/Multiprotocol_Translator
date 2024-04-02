@@ -4,6 +4,7 @@ import ai.aitia.arrowhead.application.library.ArrowheadService;
 import common.ConnectionDetails;
 import common.IConsumer;
 import common.IProducer;
+import eu.arrowhead.application.skeleton.consumer.classes.dds.DDSCustomProducer;
 import eu.arrowhead.application.skeleton.consumer.classes.kafka.KafkaCustomProducer;
 import eu.arrowhead.application.skeleton.consumer.classes.mqtt.MqttCustomProducer;
 import eu.arrowhead.application.skeleton.consumer.classes.rabbit.RabbitCustomProducer;
@@ -67,11 +68,13 @@ public class MiddlewareSetup implements Runnable {
         consumerMap.put("teste","eu.arrowhead.application.skeleton.consumer.classes.testServices.PeriodicConsumer");
         consumerMap.put("kafka","eu.arrowhead.application.skeleton.consumer.classes.kafka.KafkaCustomConsumer");
         consumerMap.put("rabbit","eu.arrowhead.application.skeleton.consumer.classes.rabbit.RabbitCustomConsumer");
+        consumerMap.put("dds", "eu.arrowhead.application.skeleton.consumer.classes.dds.DDSCustomConsumer");
 
         producerMap.put("mqtt","eu.arrowhead.application.skeleton.consumer.classes.mqtt.MqttCustomProducer");
         producerMap.put("teste","eu.arrowhead.application.skeleton.consumer.classes.testServices.ConsoleProducer");
         producerMap.put("kafka","eu.arrowhead.application.skeleton.consumer.classes.kafka.KafkaCustomProducer");
         producerMap.put("rabbit","eu.arrowhead.application.skeleton.consumer.classes.rabbit.RabbitCustomProducer");
+        consumerMap.put("dds", "eu.arrowhead.application.skeleton.consumer.classes.dds.DDSCustomProducer");
     }
 
     /**
@@ -155,6 +158,9 @@ public class MiddlewareSetup implements Runnable {
                 break;
             case "rabbit":
                 producer = new RabbitCustomProducer(cd,settings);
+                break;
+            case "dds":
+                producer = new DDSCustomProducer(cd, settings);
         }
         return producer;
     }

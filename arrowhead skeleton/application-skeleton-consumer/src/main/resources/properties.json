@@ -18,6 +18,16 @@
         "qos": 1,
         "client.id": "middleware-consumer"
       }
+    },
+    {
+      "internal.id": "device04",
+      "protocol": "dds",
+      "additional.props": {
+        "topic": "cards",
+        "connection.timeout": 20,
+        "qos": 1,
+        "client.id": "middleware-consumer"
+      }
     }
   ],
   "Consumers": [

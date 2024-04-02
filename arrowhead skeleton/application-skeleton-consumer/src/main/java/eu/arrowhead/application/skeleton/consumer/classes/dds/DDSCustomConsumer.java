@@ -1,9 +1,16 @@
 package eu.arrowhead.application.skeleton.consumer.classes.dds;
 
 import DDS.*;
+import Messenger.MessageTypeSupportImpl;
+import OpenDDS.DCPS.DEFAULT_STATUS_MASK;
+import OpenDDS.DCPS.TheParticipantFactory;
 import common.ConnectionDetails;
 import common.IConsumer;
 import common.IProducer;
+import org.omg.CORBA.*;
+import org.omg.CORBA.Object;
+import org.omg.CORBA.StringSeqHolder;
+
 import java.util.List;
 import java.util.Map;
 
@@ -23,6 +30,133 @@ public class DDSCustomConsumer extends IConsumer implements DataReader {
         super(connectionDetails, producer, settings);
     }
 
+
+    private void createConsumer(String topic){
+        System.out.println("Start Subscriber");
+        boolean reliable = checkReliable(args);
+
+        String[] args = new String[1];
+
+        DomainParticipantFactory dpf =
+                TheParticipantFactory.WithArgs(new StringSeqHolder(args));
+        if (dpf == null) {
+            System.err.println("ERROR: Domain Participant Factory not found");
+            return;
+        }
+        DomainParticipant dp = dpf.create_participant(4,
+                PARTICIPANT_QOS_DEFAULT.get(), null, DEFAULT_STATUS_MASK.value);
+        if (dp == null) {
+            System.err.println("ERROR: Domain Participant creation failed");
+            return;
+        }
+
+        MessageTypeSupportImpl servant = new MessageTypeSupportImpl();
+        if (servant.register_type(dp, "") != RETCODE_OK.value) {
+            System.err.println("ERROR: register_type failed");
+            return;
+        }
+        Topic top = dp.create_topic("Movie Discussion List",
+                servant.get_type_name(),
+                TOPIC_QOS_DEFAULT.get(),
+                null,
+                DEFAULT_STATUS_MASK.value);
+        if (top == null) {
+            System.err.println("ERROR: Topic creation failed");
+            return;
+        }
+
+        Subscriber sub = dp.create_subscriber(SUBSCRIBER_QOS_DEFAULT.get(),
+                null, DEFAULT_STATUS_MASK.value);
+        if (sub == null) {
+            System.err.println("ERROR: Subscriber creation failed");
+            return;
+        }
+
+        // Use the default transport (do nothing)
+
+        DataReaderQos dr_qos = new DataReaderQos();
+        dr_qos.durability = new DurabilityQosPolicy();
+        dr_qos.durability.kind = DurabilityQosPolicyKind.from_int(0);
+        dr_qos.deadline = new DeadlineQosPolicy();
+        dr_qos.deadline.period = new Duration_t();
+        dr_qos.latency_budget = new LatencyBudgetQosPolicy();
+        dr_qos.latency_budget.duration = new Duration_t();
+        dr_qos.liveliness = new LivelinessQosPolicy();
+        dr_qos.liveliness.kind = LivelinessQosPolicyKind.from_int(0);
+        dr_qos.liveliness.lease_duration = new Duration_t();
+        dr_qos.reliability = new ReliabilityQosPolicy();
+        dr_qos.reliability.kind = ReliabilityQosPolicyKind.from_int(0);
+        dr_qos.reliability.max_blocking_time = new Duration_t();
+        dr_qos.destination_order = new DestinationOrderQosPolicy();
+        dr_qos.destination_order.kind = DestinationOrderQosPolicyKind.from_int(0);
+        dr_qos.history = new HistoryQosPolicy();
+        dr_qos.history.kind = HistoryQosPolicyKind.from_int(0);
+        dr_qos.resource_limits = new ResourceLimitsQosPolicy();
+        dr_qos.user_data = new UserDataQosPolicy();
+        dr_qos.user_data.value = new byte[0];
+        dr_qos.ownership = new OwnershipQosPolicy();
+        dr_qos.ownership.kind = OwnershipQosPolicyKind.from_int(0);
+        dr_qos.time_based_filter = new TimeBasedFilterQosPolicy();
+        dr_qos.time_based_filter.minimum_separation = new Duration_t();
+        dr_qos.reader_data_lifecycle = new ReaderDataLifecycleQosPolicy();
+        dr_qos.reader_data_lifecycle.autopurge_nowriter_samples_delay = new Duration_t();
+        dr_qos.reader_data_lifecycle.autopurge_disposed_samples_delay = new Duration_t();
+        dr_qos.representation = new DataRepresentationQosPolicy();
+        dr_qos.representation.value = new short[0];
+        dr_qos.type_consistency = new TypeConsistencyEnforcementQosPolicy();
+        dr_qos.type_consistency.kind = 2;
+        dr_qos.type_consistency.ignore_member_names = false;
+        dr_qos.type_consistency.force_type_validation = false;
+
+        DataReaderQosHolder qosh = new DataReaderQosHolder(dr_qos);
+        sub.get_default_datareader_qos(qosh);
+        if (reliable) {
+            qosh.value.reliability.kind =
+                    ReliabilityQosPolicyKind.RELIABLE_RELIABILITY_QOS;
+        }
+        qosh.value.history.kind = HistoryQosPolicyKind.KEEP_ALL_HISTORY_QOS;
+
+        DataReaderListenerImpl listener = new DataReaderListenerImpl();
+
+        GuardCondition gc = new GuardCondition();
+        WaitSet ws = new WaitSet();
+        ws.attach_condition(gc);
+        listener.set_guard_condition(gc);
+
+        DataReader dr = sub.create_datareader(top,
+                qosh.value,
+                listener,
+                DEFAULT_STATUS_MASK.value);
+        if (!reliable) {
+            listener.set_expected_count(1);
+        }
+
+        if (dr == null) {
+            System.err.println("ERROR: DataReader creation failed");
+            return;
+        }
+        Duration_t timeout = new Duration_t(DURATION_INFINITE_SEC.value,
+                DURATION_INFINITE_NSEC.value);
+
+        ConditionSeqHolder cond = new ConditionSeqHolder(new Condition[]{});
+        if (ws.wait(cond, timeout) != RETCODE_OK.value) {
+            System.err.println("ERROR: wait() failed.");
+            return;
+        }
+        System.out.println("Subscriber Report Validity");
+        listener.report_validity();
+
+        ws.detach_condition(gc);
+
+        System.out.println("Stop Subscriber");
+
+        dp.delete_contained_entities();
+        dpf.delete_participant(dp);
+        TheServiceParticipant.shutdown();
+
+        System.out.println("Subscriber exiting");
+
+    }
     @Override
     public void run() {
 
@@ -141,5 +275,70 @@ public class DDSCustomConsumer extends IConsumer implements DataReader {
     @Override
     public int get_instance_handle() {
         return 0;
+    }
+
+    @Override
+    public boolean _is_a(String s) {
+        return false;
+    }
+
+    @Override
+    public boolean _is_equivalent(Object object) {
+        return false;
+    }
+
+    @Override
+    public boolean _non_existent() {
+        return false;
+    }
+
+    @Override
+    public int _hash(int i) {
+        return 0;
+    }
+
+    @Override
+    public Object _duplicate() {
+        return null;
+    }
+
+    @Override
+    public void _release() {
+
+    }
+
+    @Override
+    public Object _get_interface_def() {
+        return null;
+    }
+
+    @Override
+    public Request _request(String s) {
+        return null;
+    }
+
+    @Override
+    public Request _create_request(Context context, String s, NVList nvList, NamedValue namedValue) {
+        return null;
+    }
+
+    @Override
+    public Request _create_request(Context context, String s, NVList nvList, NamedValue namedValue, ExceptionList exceptionList, ContextList contextList) {
+        return null;
+    }
+
+    @Override
+    public Policy _get_policy(int i) {
+        return null;
+    }
+
+    @Override
+    public DomainManager[] _get_domain_managers() {
+        return new DomainManager[0];
+    }
+
+    @Override
+    public Object _set_policy_override(Policy[] policies, SetOverrideType setOverrideType) {
+        return null;
     }
 }

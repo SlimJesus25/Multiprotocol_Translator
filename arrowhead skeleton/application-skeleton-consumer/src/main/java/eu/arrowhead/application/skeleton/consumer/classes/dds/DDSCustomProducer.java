@@ -10,6 +10,13 @@ import OpenDDS.DCPS.TheParticipantFactory;
 import OpenDDS.DCPS.TheServiceParticipant;
 import common.ConnectionDetails;
 import common.IProducer;
+import eu.arrowhead.application.skeleton.consumer.classes.Constants;
+import eu.arrowhead.application.skeleton.consumer.classes.PubSubSettings;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.omg.CORBA.*;
+import org.omg.CORBA.Object;
+import org.omg.CORBA.StringSeqHolder;
 
 import java.util.Map;
 
@@ -18,37 +25,47 @@ import java.util.Map;
  **/
 public class DDSCustomProducer extends IProducer implements DataWriter {
 
-    private static int count = 0;
     private static final int N_MSGS = 40;
-    private boolean reliable;
+    private final ProducerConfig producerConfig;
+    private final PubSubSettings settings;
+    private DataWriter dataWriter;
+    private DomainParticipant domainParticipant;
+    private DomainParticipantFactory domainParticipantFactory;
+
     public DDSCustomProducer(ConnectionDetails connectionDetails, Map<String, String> settings) {
         super(connectionDetails, settings);
+        this.settings = new PubSubSettings(settings);
+        this.producerConfig = new ProducerConfig(Constants.objectifyMap(settings));
     }
 
-    @Override
-    public void produce(String topic, String message) {
+    private void createProducer(String topic){
+        Map<String, java.lang.Object> config = producerConfig.originals();
+
+        ConnectionDetails cd = this.getConnectionDetails();
+        config.put("bootstrap.servers", cd.getAddress() + ":" + cd.getPort());
 
         String[] args = new String[1];
 
-        // TODO: Ver o motivo pelo qual o new StringSeqHolder não é aceite.
-        DomainParticipantFactory dpf = TheParticipantFactory.WithArgs(null);
-        if(dpf == null){
+        this.domainParticipantFactory = TheParticipantFactory.WithArgs(new StringSeqHolder(args));
+        if(this.domainParticipantFactory == null){
             System.out.println("Error");
             return;
         }
 
-        DomainParticipant dp = dpf.create_participant(4, PARTICIPANT_QOS_DEFAULT.get(), null, DEFAULT_STATUS_MASK.value);
-        if(dp == null){
+        this.domainParticipant = this.domainParticipantFactory.create_participant(4, PARTICIPANT_QOS_DEFAULT.get(),
+                null, DEFAULT_STATUS_MASK.value);
+        if(this.domainParticipant == null){
             System.out.println("Error");
             return;
         }
 
         MessageTypeSupportImpl servant = new MessageTypeSupportImpl();
-        if (servant.register_type(dp, "") != RETCODE_OK.value) {
+        if (servant.register_type(this.domainParticipant, "") != RETCODE_OK.value) {
             System.err.println("ERROR: register_type failed");
             return;
         }
-        Topic top = dp.create_topic("Movie Discussion List",
+
+        Topic top = this.domainParticipant.create_topic(topic,
                 servant.get_type_name(),
                 TOPIC_QOS_DEFAULT.get(),
                 null,
@@ -58,30 +75,45 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
             return;
         }
 
-        Publisher pub = dp.create_publisher(PUBLISHER_QOS_DEFAULT.get(), null,
+        Publisher pub = this.domainParticipant.create_publisher(PUBLISHER_QOS_DEFAULT.get(), null,
                 DEFAULT_STATUS_MASK.value);
         if (pub == null) {
             System.err.println("ERROR: Publisher creation failed");
             return;
         }
 
-        // Use the default transport configuration (do nothing)
-
         DataWriterQos dw_qos = new DataWriterQos();
+        dw_qos.deadline = new DeadlineQosPolicy();
+
+        /*
+        TODO: Para já, o 'At least once' e o 'Exactly once' estão com as mesmas configurações, contudo ainda é preciso
+          analisar se é possível fazer o mapeamento, e como.
+         */
+
+        boolean reliable = true;
+
+        if(settings.getQos() == 0){
+            dw_qos.reliability.kind = ReliabilityQosPolicyKind.from_int(ReliabilityQosPolicyKind._BEST_EFFORT_RELIABILITY_QOS);
+            reliable = false;
+        }else if(settings.getQos() == 1){
+            dw_qos.reliability.kind = ReliabilityQosPolicyKind.from_int(ReliabilityQosPolicyKind._RELIABLE_RELIABILITY_QOS);
+            dw_qos.deadline.period = new Duration_t(5, 0);
+        }else{
+            dw_qos.reliability.kind = ReliabilityQosPolicyKind.from_int(ReliabilityQosPolicyKind._RELIABLE_RELIABILITY_QOS);
+            dw_qos.deadline.period = new Duration_t(5, 0);
+        }
+
         dw_qos.durability = new DurabilityQosPolicy();
         dw_qos.durability.kind = DurabilityQosPolicyKind.from_int(0);
         dw_qos.durability_service = new DurabilityServiceQosPolicy();
         dw_qos.durability_service.history_kind = HistoryQosPolicyKind.from_int(0);
         dw_qos.durability_service.service_cleanup_delay = new Duration_t();
-        dw_qos.deadline = new DeadlineQosPolicy();
-        dw_qos.deadline.period = new Duration_t();
         dw_qos.latency_budget = new LatencyBudgetQosPolicy();
         dw_qos.latency_budget.duration = new Duration_t();
         dw_qos.liveliness = new LivelinessQosPolicy();
         dw_qos.liveliness.kind = LivelinessQosPolicyKind.from_int(0);
         dw_qos.liveliness.lease_duration = new Duration_t();
         dw_qos.reliability = new ReliabilityQosPolicy();
-        dw_qos.reliability.kind = ReliabilityQosPolicyKind.from_int(0);
         dw_qos.reliability.max_blocking_time = new Duration_t();
         dw_qos.destination_order = new DestinationOrderQosPolicy();
         dw_qos.destination_order.kind = DestinationOrderQosPolicyKind.from_int(0);
@@ -107,17 +139,23 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
             qosh.value.reliability.kind =
                     ReliabilityQosPolicyKind.RELIABLE_RELIABILITY_QOS;
         }
-        DataWriter dw = pub.create_datawriter(top,
+
+        this.dataWriter = pub.create_datawriter(top,
                 qosh.value,
                 null,
                 DEFAULT_STATUS_MASK.value);
-        if (dw == null) {
+        if (this.dataWriter == null) {
             System.err.println("ERROR: DataWriter creation failed");
             return;
         }
         System.out.println("Publisher Created DataWriter");
 
-        StatusCondition sc = dw.get_statuscondition();
+    }
+
+    @Override
+    public void produce(String topic, String message) {
+
+        StatusCondition sc = this.dataWriter.get_statuscondition();
         sc.set_enabled_statuses(PUBLICATION_MATCHED_STATUS.value);
         WaitSet ws = new WaitSet();
         ws.attach_condition(sc);
@@ -127,7 +165,7 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
                 DURATION_INFINITE_NSEC.value);
 
         while (true) {
-            final int result = dw.get_publication_matched_status(matched);
+            final int result = this.dataWriter.get_publication_matched_status(matched);
             if (result != RETCODE_OK.value) {
                 System.err.println("ERROR: get_publication_matched_status()" +
                         "failed.");
@@ -147,14 +185,13 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
         }
 
         ws.detach_condition(sc);
-        // TODO: Ver o motivo pelo qual dw não é aceite.
-        MessageDataWriter mdw = MessageDataWriterHelper.narrow(null);
+        MessageDataWriter mdw = MessageDataWriterHelper.narrow(this.dataWriter);
         Message msg = new Message();
         msg.subject_id = 99;
         int handle = mdw.register_instance(msg);
         msg.from = "OpenDDS-Java";
         msg.subject = "Review";
-        msg.text = "Worst. Movie. Ever.";
+        msg.text = message;
         msg.count = 0;
         int ret = RETCODE_TIMEOUT.value;
         for (; msg.count < N_MSGS; ++msg.count) {
@@ -181,8 +218,8 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
         System.out.println("Stop Publisher");
 
         // Clean up
-        dp.delete_contained_entities();
-        dpf.delete_participant(dp);
+        this.domainParticipant.delete_contained_entities();
+        this.domainParticipantFactory.delete_participant(this.domainParticipant);
         TheServiceParticipant.shutdown();
 
         System.out.println("Publisher exiting");
@@ -277,5 +314,70 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
     @Override
     public int get_instance_handle() {
         return 0;
+    }
+
+    @Override
+    public boolean _is_a(String s) {
+        return false;
+    }
+
+    @Override
+    public boolean _is_equivalent(Object object) {
+        return false;
+    }
+
+    @Override
+    public boolean _non_existent() {
+        return false;
+    }
+
+    @Override
+    public int _hash(int i) {
+        return 0;
+    }
+
+    @Override
+    public Object _duplicate() {
+        return null;
+    }
+
+    @Override
+    public void _release() {
+
+    }
+
+    @Override
+    public Object _get_interface_def() {
+        return null;
+    }
+
+    @Override
+    public Request _request(String s) {
+        return null;
+    }
+
+    @Override
+    public Request _create_request(Context context, String s, NVList nvList, NamedValue namedValue) {
+        return null;
+    }
+
+    @Override
+    public Request _create_request(Context context, String s, NVList nvList, NamedValue namedValue, ExceptionList exceptionList, ContextList contextList) {
+        return null;
+    }
+
+    @Override
+    public Policy _get_policy(int i) {
+        return null;
+    }
+
+    @Override
+    public DomainManager[] _get_domain_managers() {
+        return new DomainManager[0];
+    }
+
+    @Override
+    public Object _set_policy_override(Policy[] policies, SetOverrideType setOverrideType) {
+        return null;
     }
 }
