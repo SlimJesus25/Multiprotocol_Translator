@@ -4,6 +4,7 @@ import DDS.*;
 import Messenger.MessageTypeSupportImpl;
 import OpenDDS.DCPS.DEFAULT_STATUS_MASK;
 import OpenDDS.DCPS.TheParticipantFactory;
+import OpenDDS.DCPS.TheServiceParticipant;
 import common.ConnectionDetails;
 import common.IConsumer;
 import common.IProducer;
@@ -33,7 +34,7 @@ public class DDSCustomConsumer extends IConsumer implements DataReader {
 
     private void createConsumer(String topic){
         System.out.println("Start Subscriber");
-        boolean reliable = checkReliable(args);
+        boolean reliable = false;
 
         String[] args = new String[1];
 
