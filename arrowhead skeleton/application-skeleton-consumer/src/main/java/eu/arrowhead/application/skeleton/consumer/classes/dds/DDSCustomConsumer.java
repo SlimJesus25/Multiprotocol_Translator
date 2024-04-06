@@ -20,26 +20,26 @@ import java.util.Map;
  **/
 public class DDSCustomConsumer extends IConsumer implements DataReader {
 
-    private ReadCondition readCondition;
-    private QueryCondition queryCondition;
-    private DataReaderQos qos;
-    private DataReaderListener dataReaderListener;
-    private TopicDescription topicDescription;
-    private Subscriber subscriber;
+
+    private final String topic;
+    private final int qos;
+
+    private String[] args;
 
     public DDSCustomConsumer(ConnectionDetails connectionDetails, List<IProducer> producer, Map<String, String> settings) {
         super(connectionDetails, producer, settings);
+        this.topic = settings.get("topic");
+        this.qos = Integer.parseInt(settings.get("qos"));
+        args = "-DCPSBit 0 -DCPSConfigFile tcp.ini -r -w".split(" ");
     }
 
 
     private void createConsumer(String topic){
-        System.out.println("Start Subscriber");
-        boolean reliable = false;
 
-        String[] args = new String[1];
+        boolean reliable = this.qos != 0;
 
         DomainParticipantFactory dpf =
-                TheParticipantFactory.WithArgs(new StringSeqHolder(args));
+                TheParticipantFactory.WithArgs(new StringSeqHolder(this.args));
         if (dpf == null) {
             System.err.println("ERROR: Domain Participant Factory not found");
             return;
@@ -160,7 +160,7 @@ public class DDSCustomConsumer extends IConsumer implements DataReader {
     }
     @Override
     public void run() {
-
+        createConsumer(this.topic);
     }
 
     @Override

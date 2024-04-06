@@ -31,11 +31,13 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
     private DataWriter dataWriter;
     private DomainParticipant domainParticipant;
     private DomainParticipantFactory domainParticipantFactory;
+    private String[] args;
 
     public DDSCustomProducer(ConnectionDetails connectionDetails, Map<String, String> settings) {
         super(connectionDetails, settings);
         this.settings = new PubSubSettings(settings);
         this.producerConfig = new ProducerConfig(Constants.objectifyMap(settings));
+        this.args = "-DCPSBit 0 - DCPSConfigFile tcp.ini -r -w -DCPSPendingTimeout 3".split(" ");
     }
 
     private void createProducer(String topic){
@@ -44,9 +46,7 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
         ConnectionDetails cd = this.getConnectionDetails();
         config.put("bootstrap.servers", cd.getAddress() + ":" + cd.getPort());
 
-        String[] args = new String[1];
-
-        this.domainParticipantFactory = TheParticipantFactory.WithArgs(new StringSeqHolder(args));
+        this.domainParticipantFactory = TheParticipantFactory.WithArgs(new StringSeqHolder(this.args));
         if(this.domainParticipantFactory == null){
             System.out.println("Error");
             return;

@@ -80,6 +80,18 @@
     },{
       "from.producers" : "device03",
       "to.consumers" : "device07"
+    },
+    {
+      "from.producers" : "device04",
+      "to.consumers" : "device05"
+    },
+    {
+      "from.producers" : "device04",
+      "to.consumers" : "device06"
+    },
+    {
+      "from.producers" : "device04",
+      "to.consumers" : "device07"
     }
   ]
 }

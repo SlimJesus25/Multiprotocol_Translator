@@ -18,6 +18,11 @@
         "port" : 15672
       },
 
+      "dds": {
+        "address" : "localhost",
+        "port" : 12345
+      },
+
       "teste": {
         "address" : "none",
         "port" : 0

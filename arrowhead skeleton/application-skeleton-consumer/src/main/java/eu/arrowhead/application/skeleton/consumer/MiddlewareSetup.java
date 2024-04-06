@@ -74,7 +74,7 @@ public class MiddlewareSetup implements Runnable {
         producerMap.put("teste","eu.arrowhead.application.skeleton.consumer.classes.testServices.ConsoleProducer");
         producerMap.put("kafka","eu.arrowhead.application.skeleton.consumer.classes.kafka.KafkaCustomProducer");
         producerMap.put("rabbit","eu.arrowhead.application.skeleton.consumer.classes.rabbit.RabbitCustomProducer");
-        consumerMap.put("dds", "eu.arrowhead.application.skeleton.consumer.classes.dds.DDSCustomProducer");
+        producerMap.put("dds", "eu.arrowhead.application.skeleton.consumer.classes.dds.DDSCustomProducer");
     }
 
     /**
@@ -181,7 +181,7 @@ public class MiddlewareSetup implements Runnable {
         Class<?> c;
         try {
             c = Class.forName(consumerMap.get(name));
-            Constructor<?> cons = c.getConstructor(ConnectionDetails.class,List.class, Map.class);
+            Constructor<?> cons = c.getConstructor(ConnectionDetails.class, List.class, Map.class);
             return (IConsumer) cons.newInstance(cd,producer,settings);
         } catch (ClassNotFoundException | InvocationTargetException | NoSuchMethodException | InstantiationException |
                  IllegalAccessException e) {
