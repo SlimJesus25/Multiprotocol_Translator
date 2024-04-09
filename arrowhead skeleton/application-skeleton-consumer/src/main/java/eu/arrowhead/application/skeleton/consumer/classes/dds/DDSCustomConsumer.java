@@ -130,7 +130,7 @@ public class DDSCustomConsumer extends IConsumer implements DataReader {
         }
         qosh.value.history.kind = HistoryQosPolicyKind.KEEP_ALL_HISTORY_QOS;
 
-        DataReaderListenerImpl listener = new DataReaderListenerImpl();
+        DataReaderListenerImpl listener = new DataReaderListenerImpl(this);
 
         GuardCondition gc = new GuardCondition();
         WaitSet ws = new WaitSet();
@@ -157,12 +157,12 @@ public class DDSCustomConsumer extends IConsumer implements DataReader {
             System.err.println("ERROR: wait() failed.");
             return;
         }
-        /*
+
         System.out.println("Subscriber Report Validity");
         listener.report_validity();
 
         ws.detach_condition(gc);
-
+        /*
         System.out.println("Stop Subscriber");
 
         dp.delete_contained_entities();
@@ -173,6 +173,8 @@ public class DDSCustomConsumer extends IConsumer implements DataReader {
          */
 
     }
+
+
     @Override
     public void run() {
         createConsumer(this.topic);
