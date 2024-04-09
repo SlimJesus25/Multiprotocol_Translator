@@ -12,6 +12,7 @@ import org.omg.CORBA.*;
 import org.omg.CORBA.Object;
 import org.omg.CORBA.StringSeqHolder;
 
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 
@@ -23,18 +24,29 @@ public class DDSCustomConsumer extends IConsumer implements DataReader {
 
     private final String topic;
     private final int qos;
-
+    private int count;
     private String[] args;
 
     public DDSCustomConsumer(ConnectionDetails connectionDetails, List<IProducer> producer, Map<String, String> settings) {
         super(connectionDetails, producer, settings);
         this.topic = settings.get("topic");
         this.qos = Integer.parseInt(settings.get("qos"));
-        args = "-DCPSBit 0 -DCPSConfigFile tcp.ini -r -w".split(" ");
+        args = new String[6];
+        args[0] = "-DCPSBit";
+        args[1] = "0";
+        args[2] = "-DCPSConfigFile";
+        args[3] = "/home/ricardo/IdeaProjects/Multiprotocol_Translator/arrowhead skeleton/application-skeleton-consumer/src/main/java/eu/arrowhead/application/skeleton/consumer/classes/dds/tcp.ini";
+        args[4] = "-r";
+        args[5] = "-w";
+        //args = "-DCPSBit 0 -DCPSConfigFile /home/ricardo/IdeaProjects/Multiprotocol_Translator/arrowhead skeleton/application-skeleton-consumer/src/main/java/eu/arrowhead/application/skeleton/consumer/classes/dds/tcp.ini -r -w".split("^d ^s");
+        count = 1;
     }
 
 
     private void createConsumer(String topic){
+
+        System.setProperty("java.library.path", "/home/ricardo/Downloads/OpenDDS-3.27/java/tests/messenger/messenger_idl");
+        System.loadLibrary("OpenDDS_DCPS_Java");
 
         boolean reliable = this.qos != 0;
 
@@ -44,8 +56,9 @@ public class DDSCustomConsumer extends IConsumer implements DataReader {
             System.err.println("ERROR: Domain Participant Factory not found");
             return;
         }
-        DomainParticipant dp = dpf.create_participant(4,
-                PARTICIPANT_QOS_DEFAULT.get(), null, DEFAULT_STATUS_MASK.value);
+
+        DomainParticipant dp = dpf.create_participant(this.count++,
+                    PARTICIPANT_QOS_DEFAULT.get(), null, DEFAULT_STATUS_MASK.value);
         if (dp == null) {
             System.err.println("ERROR: Domain Participant creation failed");
             return;
@@ -56,7 +69,7 @@ public class DDSCustomConsumer extends IConsumer implements DataReader {
             System.err.println("ERROR: register_type failed");
             return;
         }
-        Topic top = dp.create_topic("Movie Discussion List",
+        Topic top = dp.create_topic(this.topic,
                 servant.get_type_name(),
                 TOPIC_QOS_DEFAULT.get(),
                 null,
@@ -144,6 +157,7 @@ public class DDSCustomConsumer extends IConsumer implements DataReader {
             System.err.println("ERROR: wait() failed.");
             return;
         }
+        /*
         System.out.println("Subscriber Report Validity");
         listener.report_validity();
 
@@ -156,6 +170,7 @@ public class DDSCustomConsumer extends IConsumer implements DataReader {
         TheServiceParticipant.shutdown();
 
         System.out.println("Subscriber exiting");
+         */
 
     }
     @Override
