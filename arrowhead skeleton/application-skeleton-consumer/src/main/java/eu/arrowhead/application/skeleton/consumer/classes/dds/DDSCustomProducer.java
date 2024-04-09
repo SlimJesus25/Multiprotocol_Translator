@@ -93,16 +93,16 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
          */
 
         boolean reliable = true;
+        dw_qos.reliability = new ReliabilityQosPolicy();
+        dw_qos.reliability.max_blocking_time = new Duration_t();
 
         if(settings.getQos() == 0){
             dw_qos.reliability.kind = ReliabilityQosPolicyKind.from_int(ReliabilityQosPolicyKind._BEST_EFFORT_RELIABILITY_QOS);
             reliable = false;
         }else if(settings.getQos() == 1){
             dw_qos.reliability.kind = ReliabilityQosPolicyKind.from_int(ReliabilityQosPolicyKind._RELIABLE_RELIABILITY_QOS);
-            dw_qos.deadline.period = new Duration_t(5, 0);
         }else{
             dw_qos.reliability.kind = ReliabilityQosPolicyKind.from_int(ReliabilityQosPolicyKind._RELIABLE_RELIABILITY_QOS);
-            dw_qos.deadline.period = new Duration_t(5, 0);
         }
 
         dw_qos.durability = new DurabilityQosPolicy();
@@ -115,8 +115,6 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
         dw_qos.liveliness = new LivelinessQosPolicy();
         dw_qos.liveliness.kind = LivelinessQosPolicyKind.from_int(0);
         dw_qos.liveliness.lease_duration = new Duration_t();
-        dw_qos.reliability = new ReliabilityQosPolicy();
-        dw_qos.reliability.max_blocking_time = new Duration_t();
         dw_qos.destination_order = new DestinationOrderQosPolicy();
         dw_qos.destination_order.kind = DestinationOrderQosPolicyKind.from_int(0);
         dw_qos.history = new HistoryQosPolicy();
@@ -189,12 +187,12 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
         ws.detach_condition(sc);
         MessageDataWriter mdw = MessageDataWriterHelper.narrow(this.dataWriter);
         Message msg = new Message();
-        msg.subject_id = 99;
+        msg.subject_id = this.count;
         int handle = mdw.register_instance(msg);
-        msg.from = "OpenDDS-Java";
-        msg.subject = "Review";
+        msg.from = this.settings.getClientId();
+        msg.subject = topic;
         msg.text = message;
-        msg.count = 0;
+        msg.count = this.count;
         int ret = RETCODE_TIMEOUT.value;
         for (; msg.count < N_MSGS; ++msg.count) {
             while ((ret = mdw.write(msg, handle)) == RETCODE_TIMEOUT.value) {
@@ -220,9 +218,9 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
         System.out.println("Stop Publisher");
 
         // Clean up
-        this.domainParticipant.delete_contained_entities();
-        this.domainParticipantFactory.delete_participant(this.domainParticipant);
-        TheServiceParticipant.shutdown();
+        // this.domainParticipant.delete_contained_entities();
+        // this.domainParticipantFactory.delete_participant(this.domainParticipant);
+        // TheServiceParticipant.shutdown();
 
         System.out.println("Publisher exiting");
 
