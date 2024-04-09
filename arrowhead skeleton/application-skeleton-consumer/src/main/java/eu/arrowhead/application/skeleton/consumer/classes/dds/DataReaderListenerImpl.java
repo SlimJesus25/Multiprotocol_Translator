@@ -9,12 +9,17 @@ package eu.arrowhead.application.skeleton.consumer.classes.dds;
 import DDS.*;
 import OpenDDS.DCPS.*;
 import OpenDDS.DCPS.transport.*;
+import common.IConsumer;
 import org.omg.CORBA.StringSeqHolder;
 import Messenger.*;
 import java.util.ArrayList;
 
 public class DataReaderListenerImpl extends DDS._DataReaderListenerLocalBase {
 
+    private IConsumer instance;
+    public DataReaderListenerImpl(IConsumer instance){
+        this.instance = instance;
+    }
     private int num_msgs = 0;
 
     private int expected_count = 40;
@@ -56,6 +61,8 @@ public class DataReaderListenerImpl extends DDS._DataReaderListenerLocalBase {
         SampleInfoHolder sih = new SampleInfoHolder(new SampleInfo(0, 0, 0,
                 new DDS.Time_t(), 0, 0, 0, 0, 0, 0, 0, false, 0));
         int status = mdr.take_next_sample(mh, sih);
+
+        instance.OnMessageReceived(mh.value.subject, mh.value.text);
 
         if (status == RETCODE_OK.value) {
 
