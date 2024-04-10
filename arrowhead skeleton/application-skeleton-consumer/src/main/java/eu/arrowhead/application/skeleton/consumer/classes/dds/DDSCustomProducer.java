@@ -31,6 +31,7 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
     private DomainParticipant domainParticipant;
     private DomainParticipantFactory domainParticipantFactory;
     private String[] args;
+    private String topic;
     private int count;
 
     public DDSCustomProducer(ConnectionDetails connectionDetails, Map<String, String> settings) {
@@ -46,6 +47,7 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
         args[5] = "-w";
         args[6] = "-DCPSPendingTimeout";
         args[7] = "3";
+        this.topic = settings.get("topic");
         createProducer(settings.get("topic"));
     }
 
@@ -157,6 +159,7 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
     @Override
     public void produce(String topic, String message) {
 
+        topic = this.topic;
         StatusCondition sc = this.dataWriter.get_statuscondition();
         sc.set_enabled_statuses(PUBLICATION_MATCHED_STATUS.value);
         WaitSet ws = new WaitSet();
@@ -166,6 +169,7 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
         Duration_t timeout = new Duration_t(DURATION_INFINITE_SEC.value,
                 DURATION_INFINITE_NSEC.value);
 
+        /*
         while (true) {
             final int result = this.dataWriter.get_publication_matched_status(matched);
             if (result != RETCODE_OK.value) {
@@ -185,6 +189,7 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
                 return;
             }
         }
+        */
 
         ws.detach_condition(sc);
         MessageDataWriter mdw = MessageDataWriterHelper.narrow(this.dataWriter);
@@ -196,7 +201,8 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
         msg.text = message;
         msg.count = this.count;
         int ret = RETCODE_TIMEOUT.value;
-        for (; msg.count < N_MSGS; ++msg.count) {
+        int max = msg.count+1;
+        for (; msg.count < max; ++msg.count) {
             while ((ret = mdw.write(msg, handle)) == RETCODE_TIMEOUT.value) {
             }
             if (ret != RETCODE_OK.value) {
