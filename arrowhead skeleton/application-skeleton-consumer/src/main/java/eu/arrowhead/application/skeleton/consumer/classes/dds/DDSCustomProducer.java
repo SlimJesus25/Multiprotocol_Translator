@@ -26,7 +26,6 @@ import java.util.Map;
 public class DDSCustomProducer extends IProducer implements DataWriter {
 
     private static final int N_MSGS = 40;
-    private final ProducerConfig producerConfig;
     private final PubSubSettings settings;
     private DataWriter dataWriter;
     private DomainParticipant domainParticipant;
@@ -37,16 +36,20 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
     public DDSCustomProducer(ConnectionDetails connectionDetails, Map<String, String> settings) {
         super(connectionDetails, settings);
         this.settings = new PubSubSettings(settings);
-        this.producerConfig = new ProducerConfig(Constants.objectifyMap(settings));
-        this.args = "-DCPSBit 0 - DCPSConfigFile tcp.ini -r -w -DCPSPendingTimeout 3".split(" ");
         count = 1;
+        args = new String[8];
+        args[0] = "-DCPSBit";
+        args[1] = "0";
+        args[2] = "-DCPSConfigFile";
+        args[3] = "/home/ricardo/IdeaProjects/Multiprotocol_Translator/arrowhead skeleton/application-skeleton-consumer/src/main/java/eu/arrowhead/application/skeleton/consumer/classes/dds/tcp.ini";
+        args[4] = "-r";
+        args[5] = "-w";
+        args[6] = "-DCPSPendingTimeout";
+        args[7] = "3";
+        createProducer(settings.get("topic"));
     }
 
     private void createProducer(String topic){
-        Map<String, java.lang.Object> config = producerConfig.originals();
-
-        ConnectionDetails cd = this.getConnectionDetails();
-        config.put("bootstrap.servers", cd.getAddress() + ":" + cd.getPort());
 
         this.domainParticipantFactory = TheParticipantFactory.WithArgs(new StringSeqHolder(this.args));
         if(this.domainParticipantFactory == null){
@@ -87,22 +90,21 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
         DataWriterQos dw_qos = new DataWriterQos();
         dw_qos.deadline = new DeadlineQosPolicy();
 
-        /*
-        TODO: Para já, o 'At least once' e o 'Exactly once' estão com as mesmas configurações, contudo ainda é preciso
-          analisar se é possível fazer o mapeamento, e como.
-         */
-
         boolean reliable = true;
         dw_qos.reliability = new ReliabilityQosPolicy();
         dw_qos.reliability.max_blocking_time = new Duration_t();
+        dw_qos.deadline = new DeadlineQosPolicy();
 
         if(settings.getQos() == 0){
             dw_qos.reliability.kind = ReliabilityQosPolicyKind.from_int(ReliabilityQosPolicyKind._BEST_EFFORT_RELIABILITY_QOS);
             reliable = false;
+            dw_qos.deadline.period = new Duration_t();
         }else if(settings.getQos() == 1){
             dw_qos.reliability.kind = ReliabilityQosPolicyKind.from_int(ReliabilityQosPolicyKind._RELIABLE_RELIABILITY_QOS);
+            dw_qos.deadline.period = new Duration_t();
         }else{
             dw_qos.reliability.kind = ReliabilityQosPolicyKind.from_int(ReliabilityQosPolicyKind._RELIABLE_RELIABILITY_QOS);
+            dw_qos.deadline.period = new Duration_t();
         }
 
         dw_qos.durability = new DurabilityQosPolicy();
