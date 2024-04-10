@@ -17,7 +17,7 @@ public class PubTester {
     //private static final String[] args = "-DCPSBit 0 - DCPSConfigFile tcp.ini -r -w -DCPSPendingTimeout 3".split(" ");
     private static final String topic = "cards";
     private static final int qos = 1;
-    private static final String message = "isto é um teste";
+    private static final String message = "isto é um teste 2";
 
     public static void main(String[] args){
 
@@ -178,7 +178,7 @@ public class PubTester {
         msg.text = message;
         msg.count = 1;
         int ret = RETCODE_TIMEOUT.value;
-        for (; msg.count < 10; ++msg.count) {
+        for (; msg.count < 2; ++msg.count) {
             while ((ret = mdw.write(msg, handle)) == RETCODE_TIMEOUT.value) {
             }
             if (ret != RETCODE_OK.value) {
@@ -202,10 +202,10 @@ public class PubTester {
         System.out.println("Stop Publisher");
 
         // Clean up
-        domainParticipant.delete_contained_entities();
-        domainParticipantFactory.delete_participant(domainParticipant);
-        TheServiceParticipant.shutdown();
+        // domainParticipant.delete_contained_entities();
+        // domainParticipantFactory.delete_participant(domainParticipant);
+        // TheServiceParticipant.shutdown();
 
-        System.out.println("Publisher exiting");
+        // System.out.println("Publisher exiting");
     }
 }

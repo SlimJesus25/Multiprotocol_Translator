@@ -9,6 +9,7 @@ import org.omg.CORBA.StringSeqHolder;
 public class SubTester {
 
     private static final String topic = "cards2";
+    private static final int qos = 0;
     public static boolean checkReliable(String[] args) {
         for (int i = 0; i < args.length; ++i) {
             if (args[i].equals("-r")) {
@@ -29,7 +30,7 @@ public class SubTester {
         args[5] = "-w";
 
         System.out.println("Start Subscriber");
-        boolean reliable = checkReliable(args);
+        // boolean reliable = checkReliable(args);
 
         DomainParticipantFactory dpf =
                 TheParticipantFactory.WithArgs(new StringSeqHolder(args));
@@ -66,9 +67,27 @@ public class SubTester {
             return;
         }
 
+        DataReaderQos dr_qos = new DataReaderQos();
+
+        boolean reliable = true;
+        dr_qos.reliability = new ReliabilityQosPolicy();
+        dr_qos.reliability.max_blocking_time = new Duration_t();
+        dr_qos.deadline = new DeadlineQosPolicy();
+
+        if(qos == 0){
+            dr_qos.reliability.kind = ReliabilityQosPolicyKind.from_int(ReliabilityQosPolicyKind._BEST_EFFORT_RELIABILITY_QOS);
+            reliable = false;
+            dr_qos.deadline.period = new Duration_t();
+        }else if(qos == 1){
+            dr_qos.reliability.kind = ReliabilityQosPolicyKind.from_int(ReliabilityQosPolicyKind._RELIABLE_RELIABILITY_QOS);
+            dr_qos.deadline.period = new Duration_t();
+        }else{
+            dr_qos.reliability.kind = ReliabilityQosPolicyKind.from_int(ReliabilityQosPolicyKind._RELIABLE_RELIABILITY_QOS);
+            dr_qos.deadline.period = new Duration_t();
+        }
+
         // Use the default transport (do nothing)
 
-        DataReaderQos dr_qos = new DataReaderQos();
         dr_qos.durability = new DurabilityQosPolicy();
         dr_qos.durability.kind = DurabilityQosPolicyKind.from_int(0);
         dr_qos.deadline = new DeadlineQosPolicy();
