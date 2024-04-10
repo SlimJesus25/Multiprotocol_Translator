@@ -41,6 +41,15 @@
       }
     },
     {
+      "internal.id": "device15",
+      "protocol" : "dds",
+      "additional.props": {
+        "topic": "cards2",
+        "client.id" : "middleware-producer",
+        "qos": 0
+      }
+    },
+    {
       "internal.id": "device06",
       "protocol" : "mqtt",
       "additional.props": {
@@ -92,6 +101,10 @@
     {
       "from.producers" : "device04",
       "to.consumers" : "device07"
+    },
+    {
+      "from.producers" : "device04",
+      "to.consumers" : "device15"
     }
   ]
 }
