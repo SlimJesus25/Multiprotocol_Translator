@@ -94,13 +94,11 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
 
         boolean reliable = true;
         dw_qos.reliability = new ReliabilityQosPolicy();
-        dw_qos.reliability.max_blocking_time = new Duration_t();
         dw_qos.deadline = new DeadlineQosPolicy();
 
         if(settings.getQos() == 0){
             dw_qos.reliability.kind = ReliabilityQosPolicyKind.from_int(ReliabilityQosPolicyKind._BEST_EFFORT_RELIABILITY_QOS);
             reliable = false;
-            dw_qos.deadline.period = new Duration_t();
         }else if(settings.getQos() == 1){
             dw_qos.reliability.kind = ReliabilityQosPolicyKind.from_int(ReliabilityQosPolicyKind._RELIABLE_RELIABILITY_QOS);
             dw_qos.deadline.period = new Duration_t();
@@ -119,6 +117,7 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
         dw_qos.liveliness = new LivelinessQosPolicy();
         dw_qos.liveliness.kind = LivelinessQosPolicyKind.from_int(0);
         dw_qos.liveliness.lease_duration = new Duration_t();
+        dw_qos.reliability.max_blocking_time = new Duration_t();
         dw_qos.destination_order = new DestinationOrderQosPolicy();
         dw_qos.destination_order.kind = DestinationOrderQosPolicyKind.from_int(0);
         dw_qos.history = new HistoryQosPolicy();
@@ -230,7 +229,7 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
         // this.domainParticipantFactory.delete_participant(this.domainParticipant);
         // TheServiceParticipant.shutdown();
 
-        System.out.println("Publisher exiting");
+        // System.out.println("Publisher exiting");
 
     }
 
