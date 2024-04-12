@@ -105,6 +105,10 @@
     {
       "from.producers" : "device04",
       "to.consumers" : "device15"
+    },
+    {
+      "from.producers" : "device03",
+      "to.consumers" : "device15"
     }
   ]
 }
