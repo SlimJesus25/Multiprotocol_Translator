@@ -59,7 +59,7 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
             return;
         }
 
-        this.domainParticipant = this.domainParticipantFactory.create_participant(this.count++, PARTICIPANT_QOS_DEFAULT.get(),
+        this.domainParticipant = this.domainParticipantFactory.create_participant(1, PARTICIPANT_QOS_DEFAULT.get(),
                 null, DEFAULT_STATUS_MASK.value);
         if(this.domainParticipant == null){
             System.out.println("Error");
@@ -95,6 +95,7 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
         boolean reliable = true;
         dw_qos.reliability = new ReliabilityQosPolicy();
         dw_qos.deadline = new DeadlineQosPolicy();
+        dw_qos.deadline.period = new Duration_t();
 
         if(settings.getQos() == 0){
             dw_qos.reliability.kind = ReliabilityQosPolicyKind.from_int(ReliabilityQosPolicyKind._BEST_EFFORT_RELIABILITY_QOS);

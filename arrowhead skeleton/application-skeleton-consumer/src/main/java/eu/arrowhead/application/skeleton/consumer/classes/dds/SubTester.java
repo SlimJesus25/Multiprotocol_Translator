@@ -21,6 +21,9 @@ public class SubTester {
 
     public static void main(String[] args) throws Exception {
 
+        System.setProperty("java.library.path", "/home/ricardo/Downloads/OpenDDS-3.27/java/tests/messenger/messenger_idl");
+        System.loadLibrary("OpenDDS_DCPS_Java");
+
         args = new String[6];
         args[0] = "-DCPSBit";
         args[1] = "0";
@@ -38,7 +41,7 @@ public class SubTester {
             System.err.println("ERROR: Domain Participant Factory not found");
             return;
         }
-        DomainParticipant dp = dpf.create_participant(4,
+        DomainParticipant dp = dpf.create_participant(1,
                 PARTICIPANT_QOS_DEFAULT.get(), null, DEFAULT_STATUS_MASK.value);
         if (dp == null) {
             System.err.println("ERROR: Domain Participant creation failed");

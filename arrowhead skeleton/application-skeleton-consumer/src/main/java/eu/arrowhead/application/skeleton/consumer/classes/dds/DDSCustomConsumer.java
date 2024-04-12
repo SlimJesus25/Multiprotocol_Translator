@@ -57,7 +57,7 @@ public class DDSCustomConsumer extends IConsumer implements DataReader {
             return;
         }
 
-        DomainParticipant dp = dpf.create_participant(this.count++,
+        DomainParticipant dp = dpf.create_participant(1,
                     PARTICIPANT_QOS_DEFAULT.get(), null, DEFAULT_STATUS_MASK.value);
         if (dp == null) {
             System.err.println("ERROR: Domain Participant creation failed");

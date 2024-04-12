@@ -10,6 +10,9 @@ import OpenDDS.DCPS.TheParticipantFactory;
 import OpenDDS.DCPS.TheServiceParticipant;
 import org.omg.CORBA.StringSeqHolder;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 public class PubTester {
 
 
@@ -17,7 +20,7 @@ public class PubTester {
     //private static final String[] args = "-DCPSBit 0 - DCPSConfigFile tcp.ini -r -w -DCPSPendingTimeout 3".split(" ");
     private static final String topic = "cards";
     private static final int qos = 1;
-    private static final String message = "isto é um teste 2";
+    private static final String message = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME);
 
     public static void main(String[] args){
 
