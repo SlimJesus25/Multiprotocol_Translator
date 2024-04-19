@@ -38,6 +38,7 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
         super(connectionDetails, settings);
         this.settings = new PubSubSettings(settings);
         count = 1;
+
         args = new String[8];
         args[0] = "-DCPSBit";
         args[1] = "0";
@@ -52,6 +53,9 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
     }
 
     private void createProducer(String topic){
+
+        //System.setProperty("java.library.path", "/home/ricardo/Downloads/OpenDDS-3.27/lib");
+        //System.loadLibrary("libOpenDDS_Dcps");
 
         this.domainParticipantFactory = TheParticipantFactory.WithArgs(new StringSeqHolder(this.args));
         if(this.domainParticipantFactory == null){
