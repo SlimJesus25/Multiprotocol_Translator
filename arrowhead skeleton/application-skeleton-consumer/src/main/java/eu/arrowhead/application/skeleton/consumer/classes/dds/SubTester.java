@@ -21,14 +21,14 @@ public class SubTester {
 
     public static void main(String[] args) throws Exception {
 
-        System.setProperty("java.library.path", "/home/ricardo/Downloads/OpenDDS-3.27/java/tests/messenger/messenger_idl");
-        System.loadLibrary("OpenDDS_DCPS_Java");
+        //System.setProperty("java.library.path", "/home/ricardo/Downloads/OpenDDS-3.27/java/tests/messenger/messenger_idl");
+        //System.loadLibrary("OpenDDS_DCPS_Java");
 
         args = new String[6];
         args[0] = "-DCPSBit";
         args[1] = "0";
         args[2] = "-DCPSConfigFile";
-        args[3] = "/home/ricardo/IdeaProjects/Multiprotocol_Translator/arrowhead skeleton/application-skeleton-consumer/src/main/java/eu/arrowhead/application/skeleton/consumer/classes/dds/tcp.ini";
+        args[3] = "/home/ricardo/IdeaProjects/Multiprotocol_Translator/arrowhead skeleton/application-skeleton-consumer/src/main/java/eu/arrowhead/application/skeleton/consumer/classes/dds/tcp2.ini";
         args[4] = "-r";
         args[5] = "-w";
 

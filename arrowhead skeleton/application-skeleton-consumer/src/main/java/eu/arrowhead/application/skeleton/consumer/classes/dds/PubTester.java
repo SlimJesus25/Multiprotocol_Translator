@@ -18,17 +18,20 @@ public class PubTester {
 
 
     //private static final String[] args = "-DCPSBit 0 - DCPSConfigFile tcp.ini -r -w -DCPSPendingTimeout 3".split(" ");
-    private static final String topic = "cards";
-    private static final int qos = 1;
+    private static final String topic = "cards2";
+    private static final int qos = 0;
     private static final String message = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME);
 
     public static void main(String[] args){
+
+        //System.setProperty("java.library.path", "/home/ricardo/Downloads/OpenDDS-3.27/java/tests/messenger/messenger_idl");
+        //System.loadLibrary("OpenDDS_DCPS_Java");
 
         args = new String[8];
         args[0] = "-DCPSBit";
         args[1] = "0";
         args[2] = "-DCPSConfigFile";
-        args[3] = "/home/ricardo/IdeaProjects/Multiprotocol_Translator/arrowhead skeleton/application-skeleton-consumer/src/main/java/eu/arrowhead/application/skeleton/consumer/classes/dds/tcp.ini";
+        args[3] = "/home/ricardo/IdeaProjects/Multiprotocol_Translator/arrowhead skeleton/application-skeleton-consumer/src/main/java/eu/arrowhead/application/skeleton/consumer/classes/dds/tcp2.ini";
         args[4] = "-r";
         args[5] = "-w";
         args[6] = "-DCPSPendingTimeout";
@@ -83,6 +86,7 @@ public class PubTester {
         dw_qos.deadline = new DeadlineQosPolicy();
         if(qos == 0){
             dw_qos.reliability.kind = ReliabilityQosPolicyKind.from_int(ReliabilityQosPolicyKind._BEST_EFFORT_RELIABILITY_QOS);
+            dw_qos.deadline.period = new Duration_t();
             reliable = false;
         }else if(qos == 1){
             dw_qos.reliability.kind = ReliabilityQosPolicyKind.from_int(ReliabilityQosPolicyKind._RELIABLE_RELIABILITY_QOS);
