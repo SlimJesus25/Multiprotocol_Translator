@@ -45,8 +45,8 @@ public class DDSCustomConsumer extends IConsumer implements DataReader {
 
     private void createConsumer(String topic){
 
-        System.setProperty("java.library.path", "/home/ricardo/Downloads/OpenDDS-3.27/java/tests/messenger/messenger_idl");
-        System.loadLibrary("OpenDDS_DCPS_Java");
+        //System.setProperty("java.library.path", "/home/ricardo/Downloads/OpenDDS-3.27/java/tests/messenger/messenger_idl");
+        //System.loadLibrary("OpenDDS_DCPS_Java");
 
         boolean reliable = this.qos != 0;
 
