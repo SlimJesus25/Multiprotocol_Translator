@@ -14,6 +14,9 @@ import org.apache.kafka.common.errors.ProducerFencedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -61,6 +64,8 @@ public class KafkaCustomProducer extends IProducer {
 
     @Override
     public void produce(String topic, String message) {
+
+        // LocalDateTime ini = LocalDateTime.now();
         String useTopic;
 
         if (settings.getTopic().equals("")) {
@@ -112,6 +117,9 @@ public class KafkaCustomProducer extends IProducer {
             log.info("Messages per second + " + (100000f / ((System.currentTimeMillis() - thing) / 1000f)));
             numberOfMessages = 0;
         }
+
+        // LocalDateTime fin = LocalDateTime.now();
+        // log.info("Tempo de produção: " + Duration.between(ini.toLocalTime(), fin.toLocalTime()));
     }
 
 

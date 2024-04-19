@@ -53,7 +53,7 @@ public class KafkaCustomConsumer extends IConsumer {
 
     @Override
     public void run() {
-        logger.info("ACABEI DE SER INICIADO! KAFKA");
+        //logger.info("ACABEI DE SER INICIADO! KAFKA");
         createConsumer();
         subscribe();
     }

@@ -4,12 +4,12 @@
   "default_brokers" :
     {
       "mqtt" : {
-        "address" : "localhost",
-        "port" : 1883
+        "address" : "192.168.1.154",
+        "port" : 1884
       },
 
       "kafka" : {
-        "address" : "localhost",
+        "address" : "192.168.1.154",
         "port" : 9092
       },
 
