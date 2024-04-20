@@ -7,25 +7,18 @@ import Messenger.MessageDataWriterHelper;
 import Messenger.MessageTypeSupportImpl;
 import OpenDDS.DCPS.DEFAULT_STATUS_MASK;
 import OpenDDS.DCPS.TheParticipantFactory;
-import OpenDDS.DCPS.TheServiceParticipant;
 import org.omg.CORBA.StringSeqHolder;
-
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 public class PubTester {
 
-
-
-    //private static final String[] args = "-DCPSBit 0 - DCPSConfigFile tcp.ini -r -w -DCPSPendingTimeout 3".split(" ");
     private static final String topic = "cards2";
-    private static final int qos = 0;
+    private static final int qos = 2;
+    private static int amount = 2;
     private static final String message = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME);
 
     public static void main(String[] args){
-
-        //System.setProperty("java.library.path", "/home/ricardo/Downloads/OpenDDS-3.27/java/tests/messenger/messenger_idl");
-        //System.loadLibrary("OpenDDS_DCPS_Java");
 
         args = new String[8];
         args[0] = "-DCPSBit";
@@ -76,11 +69,6 @@ public class PubTester {
         DataWriterQos dw_qos = new DataWriterQos();
         dw_qos.deadline = new DeadlineQosPolicy();
 
-        /*
-        TODO: Para já, o 'At least once' e o 'Exactly once' estão com as mesmas configurações, contudo ainda é preciso
-          analisar se é possível fazer o mapeamento, e como.
-         */
-
         boolean reliable = true;
         dw_qos.reliability = new ReliabilityQosPolicy();
         dw_qos.deadline = new DeadlineQosPolicy();
@@ -91,12 +79,11 @@ public class PubTester {
         }else if(qos == 1){
             dw_qos.reliability.kind = ReliabilityQosPolicyKind.from_int(ReliabilityQosPolicyKind._RELIABLE_RELIABILITY_QOS);
             dw_qos.deadline.period = new Duration_t();
+            amount = 5;
         }else{
             dw_qos.reliability.kind = ReliabilityQosPolicyKind.from_int(ReliabilityQosPolicyKind._RELIABLE_RELIABILITY_QOS);
             dw_qos.deadline.period = new Duration_t();
         }
-
-
 
         dw_qos.durability = new DurabilityQosPolicy();
         dw_qos.durability.kind = DurabilityQosPolicyKind.from_int(0);
@@ -154,7 +141,7 @@ public class PubTester {
         Duration_t timeout = new Duration_t(DURATION_INFINITE_SEC.value,
                 DURATION_INFINITE_NSEC.value);
 
-        /*
+
         while (true) {
             final int result = dataWriter.get_publication_matched_status(matched);
             if (result != RETCODE_OK.value) {
@@ -173,19 +160,19 @@ public class PubTester {
                 System.err.println("ERROR: wait() failed.");
                 return;
             }
-        }*/
+        }
 
         ws.detach_condition(sc);
         MessageDataWriter mdw = MessageDataWriterHelper.narrow(dataWriter);
         Message msg = new Message();
         msg.subject_id = 1;
         int handle = mdw.register_instance(msg);
-        msg.from = "Teste";
+        msg.from = topic;
         msg.subject = topic;
         msg.text = message;
         msg.count = 1;
         int ret = RETCODE_TIMEOUT.value;
-        for (; msg.count < 2; ++msg.count) {
+        for (; msg.count < amount; ++msg.count) {
             while ((ret = mdw.write(msg, handle)) == RETCODE_TIMEOUT.value) {
             }
             if (ret != RETCODE_OK.value) {
@@ -198,6 +185,7 @@ public class PubTester {
             }
         }
 
+        /*
         while (matched.value.current_count != 0) {
             final int result = mdw.get_publication_matched_status(matched);
             try {
@@ -205,14 +193,8 @@ public class PubTester {
             } catch(InterruptedException ie) {
             }
         }
+        */
 
         System.out.println("Stop Publisher");
-
-        // Clean up
-        // domainParticipant.delete_contained_entities();
-        // domainParticipantFactory.delete_participant(domainParticipant);
-        // TheServiceParticipant.shutdown();
-
-        // System.out.println("Publisher exiting");
     }
 }

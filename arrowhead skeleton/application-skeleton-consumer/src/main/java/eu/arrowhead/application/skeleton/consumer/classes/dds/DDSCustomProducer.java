@@ -7,25 +7,18 @@ import Messenger.MessageDataWriterHelper;
 import Messenger.MessageTypeSupportImpl;
 import OpenDDS.DCPS.DEFAULT_STATUS_MASK;
 import OpenDDS.DCPS.TheParticipantFactory;
-import OpenDDS.DCPS.TheServiceParticipant;
 import common.ConnectionDetails;
 import common.IProducer;
-import eu.arrowhead.application.skeleton.consumer.classes.Constants;
 import eu.arrowhead.application.skeleton.consumer.classes.PubSubSettings;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.omg.CORBA.*;
-import org.omg.CORBA.Object;
 import org.omg.CORBA.StringSeqHolder;
-
 import java.util.Map;
 
 /**
  * @author : Ricardo Venâncio - 1210828
  **/
-public class DDSCustomProducer extends IProducer implements DataWriter {
+public class DDSCustomProducer extends IProducer {
 
-    private static final int N_MSGS = 40;
+    private static int amount = 2;
     private final PubSubSettings settings;
     private DataWriter dataWriter;
     private DomainParticipant domainParticipant;
@@ -43,7 +36,8 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
         args[0] = "-DCPSBit";
         args[1] = "0";
         args[2] = "-DCPSConfigFile";
-        args[3] = "/home/ricardo/IdeaProjects/Multiprotocol_Translator/arrowhead skeleton/application-skeleton-consumer/src/main/java/eu/arrowhead/application/skeleton/consumer/classes/dds/tcp.ini";
+        args[3] = "/home/ricardo/IdeaProjects/Multiprotocol_Translator/arrowhead skeleton/application-skeleton-consumer" +
+                "/src/main/java/eu/arrowhead/application/skeleton/consumer/classes/dds/tcp2.ini";
         args[4] = "-r";
         args[5] = "-w";
         args[6] = "-DCPSPendingTimeout";
@@ -53,9 +47,6 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
     }
 
     private void createProducer(String topic){
-
-        //System.setProperty("java.library.path", "/home/ricardo/Downloads/OpenDDS-3.27/lib");
-        //System.loadLibrary("libOpenDDS_Dcps");
 
         this.domainParticipantFactory = TheParticipantFactory.WithArgs(new StringSeqHolder(this.args));
         if(this.domainParticipantFactory == null){
@@ -107,6 +98,7 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
         }else if(settings.getQos() == 1){
             dw_qos.reliability.kind = ReliabilityQosPolicyKind.from_int(ReliabilityQosPolicyKind._RELIABLE_RELIABILITY_QOS);
             dw_qos.deadline.period = new Duration_t();
+            amount = 5;
         }else{
             dw_qos.reliability.kind = ReliabilityQosPolicyKind.from_int(ReliabilityQosPolicyKind._RELIABLE_RELIABILITY_QOS);
             dw_qos.deadline.period = new Duration_t();
@@ -154,9 +146,7 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
                 DEFAULT_STATUS_MASK.value);
         if (this.dataWriter == null) {
             System.err.println("ERROR: DataWriter creation failed");
-            return;
         }
-        System.out.println("Publisher Created DataWriter");
 
     }
 
@@ -173,7 +163,7 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
         Duration_t timeout = new Duration_t(DURATION_INFINITE_SEC.value,
                 DURATION_INFINITE_NSEC.value);
 
-        /*
+
         while (true) {
             final int result = this.dataWriter.get_publication_matched_status(matched);
             if (result != RETCODE_OK.value) {
@@ -193,7 +183,6 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
                 return;
             }
         }
-        */
 
         ws.detach_condition(sc);
         MessageDataWriter mdw = MessageDataWriterHelper.narrow(this.dataWriter);
@@ -206,7 +195,7 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
         msg.count = this.count;
         int ret = RETCODE_TIMEOUT.value;
         int max = msg.count+1;
-        for (; msg.count < max; ++msg.count) {
+        for (; msg.count < amount; ++msg.count) {
             while ((ret = mdw.write(msg, handle)) == RETCODE_TIMEOUT.value) {
             }
             if (ret != RETCODE_OK.value) {
@@ -219,177 +208,7 @@ public class DDSCustomProducer extends IProducer implements DataWriter {
             }
         }
 
-        while (matched.value.current_count != 0) {
-            final int result = mdw.get_publication_matched_status(matched);
-            try {
-                Thread.sleep(100);
-            } catch(InterruptedException ie) {
-            }
-        }
-
-        System.out.println("Stop Publisher");
-
-        // Clean up
-        // this.domainParticipant.delete_contained_entities();
-        // this.domainParticipantFactory.delete_participant(this.domainParticipant);
-        // TheServiceParticipant.shutdown();
-
-        // System.out.println("Publisher exiting");
-
     }
 
-    @Override
-    public int set_qos(DataWriterQos dataWriterQos) {
-        return 0;
-    }
 
-    @Override
-    public int get_qos(DataWriterQosHolder dataWriterQosHolder) {
-        return 0;
-    }
-
-    @Override
-    public int set_listener(DataWriterListener dataWriterListener, int i) {
-        return 0;
-    }
-
-    @Override
-    public DataWriterListener get_listener() {
-        return null;
-    }
-
-    @Override
-    public Topic get_topic() {
-        return null;
-    }
-
-    @Override
-    public Publisher get_publisher() {
-        return null;
-    }
-
-    @Override
-    public int wait_for_acknowledgments(Duration_t durationT) {
-        return 0;
-    }
-
-    @Override
-    public int get_liveliness_lost_status(LivelinessLostStatusHolder livelinessLostStatusHolder) {
-        return 0;
-    }
-
-    @Override
-    public int get_offered_deadline_missed_status(OfferedDeadlineMissedStatusHolder offeredDeadlineMissedStatusHolder) {
-        return 0;
-    }
-
-    @Override
-    public int get_offered_incompatible_qos_status(OfferedIncompatibleQosStatusHolder offeredIncompatibleQosStatusHolder) {
-        return 0;
-    }
-
-    @Override
-    public int get_publication_matched_status(PublicationMatchedStatusHolder publicationMatchedStatusHolder) {
-        return 0;
-    }
-
-    @Override
-    public int assert_liveliness() {
-        return 0;
-    }
-
-    @Override
-    public int get_matched_subscriptions(InstanceHandleSeqHolder instanceHandleSeqHolder) {
-        return 0;
-    }
-
-    @Override
-    public int get_matched_subscription_data(SubscriptionBuiltinTopicDataHolder subscriptionBuiltinTopicDataHolder, int i) {
-        return 0;
-    }
-
-    @Override
-    public int enable() {
-        return 0;
-    }
-
-    @Override
-    public StatusCondition get_statuscondition() {
-        return null;
-    }
-
-    @Override
-    public int get_status_changes() {
-        return 0;
-    }
-
-    @Override
-    public int get_instance_handle() {
-        return 0;
-    }
-
-    @Override
-    public boolean _is_a(String s) {
-        return false;
-    }
-
-    @Override
-    public boolean _is_equivalent(Object object) {
-        return false;
-    }
-
-    @Override
-    public boolean _non_existent() {
-        return false;
-    }
-
-    @Override
-    public int _hash(int i) {
-        return 0;
-    }
-
-    @Override
-    public Object _duplicate() {
-        return null;
-    }
-
-    @Override
-    public void _release() {
-
-    }
-
-    @Override
-    public Object _get_interface_def() {
-        return null;
-    }
-
-    @Override
-    public Request _request(String s) {
-        return null;
-    }
-
-    @Override
-    public Request _create_request(Context context, String s, NVList nvList, NamedValue namedValue) {
-        return null;
-    }
-
-    @Override
-    public Request _create_request(Context context, String s, NVList nvList, NamedValue namedValue, ExceptionList exceptionList, ContextList contextList) {
-        return null;
-    }
-
-    @Override
-    public Policy _get_policy(int i) {
-        return null;
-    }
-
-    @Override
-    public DomainManager[] _get_domain_managers() {
-        return new DomainManager[0];
-    }
-
-    @Override
-    public Object _set_policy_override(Policy[] policies, SetOverrideType setOverrideType) {
-        return null;
-    }
 }
