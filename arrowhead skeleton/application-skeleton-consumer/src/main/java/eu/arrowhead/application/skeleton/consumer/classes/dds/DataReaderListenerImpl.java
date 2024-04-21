@@ -7,10 +7,7 @@ package eu.arrowhead.application.skeleton.consumer.classes.dds;
  */
 
 import DDS.*;
-import OpenDDS.DCPS.*;
-import OpenDDS.DCPS.transport.*;
 import common.IConsumer;
-import org.omg.CORBA.StringSeqHolder;
 import Messenger.*;
 import java.util.ArrayList;
 
@@ -66,11 +63,6 @@ public class DataReaderListenerImpl extends DDS._DataReaderListenerLocalBase {
 
         if (status == RETCODE_OK.value) {
 
-            System.out.println("SampleInfo.sample_rank = "
-                    + sih.value.sample_rank);
-            System.out.println("SampleInfo.instance_state = "
-                    + sih.value.instance_state);
-
             if (sih.value.valid_data) {
 
                 String prefix = "";
@@ -86,49 +78,31 @@ public class DataReaderListenerImpl extends DDS._DataReaderListenerLocalBase {
                         prefix = "ERROR: Repeat ";
                     }
                 }
-                System.out.println(prefix + "Message: subject    = " + mh.value.subject);
-                System.out.println("         subject_id = "
-                        + mh.value.subject_id);
-                System.out.println("         from       = " + mh.value.from);
-                System.out.println("         count      = " + mh.value.count);
-                System.out.println("         text       = " + mh.value.text);
-                System.out.println("SampleInfo.sample_rank = "
-                        + sih.value.sample_rank);
 
                 if (invalid_count == true) {
-                    System.out.println("ERROR: Invalid message.count (" + mh.value.count + ")");
-                }
-                if (!mh.value.from.equals("Comic Book Guy") && !mh.value.from.equals("OpenDDS-Java")) {
-                    System.out.println("ERROR: Invalid message.from (" + mh.value.from + ")");
-                }
-                if (!mh.value.subject.equals("Review")) {
-                    System.out.println("ERROR: Invalid message.subject (" + mh.value.subject + ")");
-                }
-                if (!mh.value.text.equals("Worst. Movie. Ever.")) {
-                    System.out.println("ERROR: Invalid message.text (" + mh.value.text + ")");
-                }
-                if (mh.value.subject_id != 99) {
-                    System.out.println("ERROR: Invalid message.subject_id (" + mh.value.subject_id + ")");
+                    // System.out.println("ERROR: Invalid message.count (" + mh.value.count + ")");
                 }
             }
             else if (sih.value.instance_state ==
                     NOT_ALIVE_DISPOSED_INSTANCE_STATE.value) {
-                System.out.println("instance is disposed");
+                // System.out.println("instance is disposed");
             }
             else if (sih.value.instance_state ==
                     NOT_ALIVE_NO_WRITERS_INSTANCE_STATE.value) {
-                System.out.println("instance is unregistered");
+                // System.out.println("instance is unregistered");
             }
             else {
-                System.out.println("DataReaderListenerImpl::on_data_available: "
+                /*System.out.println("DataReaderListenerImpl::on_data_available: "
                         + "ERROR: received unknown instance state "
                         + sih.value.instance_state);
+
+                 */
             }
 
         } else if (status == RETCODE_NO_DATA.value) {
-            System.err.println("ERROR: reader received DDS::RETCODE_NO_DATA!");
+            // System.err.println("ERROR: reader received DDS::RETCODE_NO_DATA!");
         } else {
-            System.err.println("ERROR: read Message: Error: " + status);
+            // System.err.println("ERROR: read Message: Error: " + status);
         }
 
         if (mh.value.count + 1 == expected_count) {
