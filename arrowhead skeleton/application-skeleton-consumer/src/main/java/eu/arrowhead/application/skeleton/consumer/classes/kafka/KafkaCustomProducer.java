@@ -4,6 +4,7 @@ import common.ConnectionDetails;
 import common.IProducer;
 import eu.arrowhead.application.skeleton.consumer.classes.Constants;
 import eu.arrowhead.application.skeleton.consumer.classes.PubSubSettings;
+import eu.arrowhead.application.skeleton.consumer.classes.Utils;
 import org.apache.kafka.clients.consumer.ConsumerGroupMetadata;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.producer.*;
@@ -14,12 +15,7 @@ import org.apache.kafka.common.errors.ProducerFencedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.Future;
 
 public class KafkaCustomProducer extends IProducer {
@@ -41,6 +37,13 @@ public class KafkaCustomProducer extends IProducer {
     Map<TopicPartition, OffsetAndMetadata> offsets = new HashMap<>();
 
     private final Logger logger = LogManager.getLogger(KafkaCustomProducer.class);
+
+    private List<Integer> threadCount = new ArrayList<>();
+    private List<Integer> threadPeakCount = new ArrayList<>();
+    private List<String> heapUsage = new ArrayList<>();
+    private List<String> nonHeapUsage = new ArrayList<>();
+    private List<Integer> availableProcessors = new ArrayList<>();
+    private List<Double> sysLoadAvg = new ArrayList<>();
 
     public KafkaCustomProducer(ConnectionDetails connectionDetails, Map<String, String> settings) {
         super(connectionDetails, settings);
@@ -65,7 +68,6 @@ public class KafkaCustomProducer extends IProducer {
     @Override
     public void produce(String topic, String message) {
 
-        // LocalDateTime ini = LocalDateTime.now();
         String useTopic;
 
         if (settings.getTopic().equals("")) {
@@ -84,12 +86,13 @@ public class KafkaCustomProducer extends IProducer {
         final ProducerRecord<String, String> record = new ProducerRecord<>(useTopic, messageId, message);
 
         if (numberOfMessages == 1) {
+            Utils.threads(threadCount, threadPeakCount);
+            Utils.memory(heapUsage, nonHeapUsage);
+
             thing = System.currentTimeMillis();
         }
 
         numberOfMessages++;
-
-
 
         try {
             Future<RecordMetadata> future = producer.send(record, new Callback() {
@@ -111,11 +114,21 @@ public class KafkaCustomProducer extends IProducer {
             logger.warn(e);
         }
 
-
+        if(this.numberOfMessages == 50000f || this.numberOfMessages == 25000f || this.numberOfMessages == 75000f){
+            Utils.threads(threadCount, threadPeakCount);
+            Utils.memory(heapUsage, nonHeapUsage);
+        }
 
         if (numberOfMessages == 100000f) {
-            log.info("Messages per second + " + (100000f / ((System.currentTimeMillis() - thing) / 1000f)));
+            long execTime = System.currentTimeMillis() - thing;
+            log.info("Messages per second + " + (100000f / (execTime / 1000f)));
+            log.info("Execution time: " + execTime / 1000f);
+            Utils.cpu(availableProcessors, sysLoadAvg);
+            Utils.cpuInfo(availableProcessors, sysLoadAvg, log);
+            Utils.memoryInfo(heapUsage, nonHeapUsage, log);
+            Utils.threadsInfo(threadCount, threadPeakCount, log);
             numberOfMessages = 0;
+            clearLists();
         }
 
         // LocalDateTime fin = LocalDateTime.now();
@@ -148,6 +161,15 @@ public class KafkaCustomProducer extends IProducer {
 
             // logger.info("Kafka Producer connected to " + cd.getAddress() + ":" + cd.getPort() + " with topic " + settings.getTopic());
 
+    }
+
+    private void clearLists(){
+        this.availableProcessors.clear();
+        this.heapUsage.clear();
+        this.nonHeapUsage.clear();
+        this.threadCount.clear();
+        this.threadPeakCount.clear();
+        this.sysLoadAvg.clear();
     }
 
     public int getNumberOfMessages() {

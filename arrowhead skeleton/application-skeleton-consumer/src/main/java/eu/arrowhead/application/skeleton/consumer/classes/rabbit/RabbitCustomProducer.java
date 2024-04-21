@@ -7,11 +7,14 @@ import com.rabbitmq.client.ConnectionFactory;
 import common.ConnectionDetails;
 import common.IProducer;
 import eu.arrowhead.application.skeleton.consumer.classes.QoSDatabase.ExactlyOnceProducerHelper;
+import eu.arrowhead.application.skeleton.consumer.classes.Utils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
@@ -20,21 +23,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class RabbitCustomProducer extends IProducer {
 
     private org.slf4j.Logger log = LoggerFactory.getLogger(RabbitCustomProducer.class);
-
     private ExactlyOnceProducerHelper exactlyOnceProducerHelper = new ExactlyOnceProducerHelper();
     private Channel channel;
-
     private ConnectionFactory factory;
-
     private RabbitConsumerSettings settings;
-
     private int numberOfMessages = 1;
-
     private long thing;
-
     private final Object mutex = new Object();
-
     private final Logger logger = LogManager.getLogger(RabbitCustomProducer.class);
+    private List<Integer> threadCount = new ArrayList<>();
+    private List<Integer> threadPeakCount = new ArrayList<>();
+    private List<String> heapUsage = new ArrayList<>();
+    private List<String> nonHeapUsage = new ArrayList<>();
+    private List<Integer> availableProcessors = new ArrayList<>();
+    private List<Double> sysLoadAvg = new ArrayList<>();
 
     public RabbitCustomProducer(ConnectionDetails connectionDetails, Map<String,String> settings) {
         super(connectionDetails, settings);
@@ -62,6 +64,9 @@ public class RabbitCustomProducer extends IProducer {
         boolean confirmed = false;
 
         if (numberOfMessages == 1) {
+            Utils.threads(threadCount, threadPeakCount);
+            Utils.memory(heapUsage, nonHeapUsage);
+
             thing = System.currentTimeMillis();
         }
 
@@ -133,12 +138,21 @@ public class RabbitCustomProducer extends IProducer {
             throw new RuntimeException(e);
         }
 
-
-
+        if(this.numberOfMessages == 50000f || this.numberOfMessages == 25000f || this.numberOfMessages == 75000f){
+            Utils.threads(threadCount, threadPeakCount);
+            Utils.memory(heapUsage, nonHeapUsage);
+        }
 
         if (numberOfMessages == 100000) {
-            log.info("Messages per second + " + (100000f / ((System.currentTimeMillis() - thing) / 1000f)));
+            long execTime = System.currentTimeMillis() - thing;
+            log.info("Messages per second + " + (100000f / (execTime / 1000f)));
+            log.info("Execution time: " + execTime / 1000f);
+            Utils.cpu(availableProcessors, sysLoadAvg);
+            Utils.cpuInfo(availableProcessors, sysLoadAvg, log);
+            Utils.memoryInfo(heapUsage, nonHeapUsage, log);
+            Utils.threadsInfo(threadCount, threadPeakCount, log);
             numberOfMessages = 0;
+            clearLists();
         }
     }
 
@@ -152,6 +166,15 @@ public class RabbitCustomProducer extends IProducer {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void clearLists(){
+        this.availableProcessors.clear();
+        this.heapUsage.clear();
+        this.nonHeapUsage.clear();
+        this.threadCount.clear();
+        this.threadPeakCount.clear();
+        this.sysLoadAvg.clear();
     }
 
     public int getNumberOfMessages() {

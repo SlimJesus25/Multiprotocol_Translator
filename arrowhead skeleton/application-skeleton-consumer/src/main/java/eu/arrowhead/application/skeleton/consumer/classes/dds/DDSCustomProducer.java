@@ -10,7 +10,11 @@ import OpenDDS.DCPS.TheParticipantFactory;
 import common.ConnectionDetails;
 import common.IProducer;
 import eu.arrowhead.application.skeleton.consumer.classes.PubSubSettings;
+import eu.arrowhead.application.skeleton.consumer.classes.Utils;
 import org.omg.CORBA.StringSeqHolder;
+import org.slf4j.LoggerFactory;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -21,11 +25,23 @@ public class DDSCustomProducer extends IProducer {
     private static int amount = 2;
     private final PubSubSettings settings;
     private DataWriter dataWriter;
+    private org.slf4j.Logger log = LoggerFactory.getLogger(DDSCustomProducer.class);
+
+    private int numberOfMessages = 0;
+    long thing = System.currentTimeMillis();
+
     private DomainParticipant domainParticipant;
     private DomainParticipantFactory domainParticipantFactory;
     private String[] args;
     private String topic;
     private int count;
+
+    private List<Integer> threadCount = new ArrayList<>();
+    private List<Integer> threadPeakCount = new ArrayList<>();
+    private List<String> heapUsage = new ArrayList<>();
+    private List<String> nonHeapUsage = new ArrayList<>();
+    private List<Integer> availableProcessors = new ArrayList<>();
+    private List<Double> sysLoadAvg = new ArrayList<>();
 
     public DDSCustomProducer(ConnectionDetails connectionDetails, Map<String, String> settings) {
         super(connectionDetails, settings);
@@ -153,6 +169,15 @@ public class DDSCustomProducer extends IProducer {
     @Override
     public void produce(String topic, String message) {
 
+        if (numberOfMessages == 1) {
+            Utils.threads(threadCount, threadPeakCount);
+            Utils.memory(heapUsage, nonHeapUsage);
+
+            thing = System.currentTimeMillis();
+        }
+
+        numberOfMessages++;
+
         topic = this.topic;
         StatusCondition sc = this.dataWriter.get_statuscondition();
         sc.set_enabled_statuses(PUBLICATION_MATCHED_STATUS.value);
@@ -173,7 +198,7 @@ public class DDSCustomProducer extends IProducer {
             }
 
             if (matched.value.current_count >= 1) {
-                System.out.println("Publisher Matched");
+                // System.out.println("Publisher Matched");
                 break;
             }
 
@@ -192,9 +217,9 @@ public class DDSCustomProducer extends IProducer {
         msg.from = this.settings.getClientId();
         msg.subject = topic;
         msg.text = message;
-        msg.count = this.count;
+        msg.count = 1;
+        this.count = this.numberOfMessages;
         int ret = RETCODE_TIMEOUT.value;
-        int max = msg.count+1;
         for (; msg.count < amount; ++msg.count) {
             while ((ret = mdw.write(msg, handle)) == RETCODE_TIMEOUT.value) {
             }
@@ -202,12 +227,35 @@ public class DDSCustomProducer extends IProducer {
                 System.err.println("ERROR " + msg.count +
                         " write() returned " + ret);
             }
-            try {
-                Thread.sleep(100);
-            } catch(InterruptedException ie) {
-            }
         }
 
+        if(this.numberOfMessages == 50000f || this.numberOfMessages == 25000f || this.numberOfMessages == 75000f){
+            Utils.threads(threadCount, threadPeakCount);
+            Utils.memory(heapUsage, nonHeapUsage);
+        }
+
+
+        if (numberOfMessages == 100000f) {
+            long execTime = System.currentTimeMillis() - thing;
+            log.info("Messages per second + " + (100000f / (execTime / 1000f)));
+            log.info("Execution time: " + execTime / 1000f);
+            Utils.cpu(availableProcessors, sysLoadAvg);
+            Utils.cpuInfo(availableProcessors, sysLoadAvg, log);
+            Utils.memoryInfo(heapUsage, nonHeapUsage, log);
+            Utils.threadsInfo(threadCount, threadPeakCount, log);
+            numberOfMessages = 0;
+            clearLists();
+        }
+
+    }
+
+    private void clearLists(){
+        this.availableProcessors.clear();
+        this.heapUsage.clear();
+        this.nonHeapUsage.clear();
+        this.threadCount.clear();
+        this.threadPeakCount.clear();
+        this.sysLoadAvg.clear();
     }
 
 
