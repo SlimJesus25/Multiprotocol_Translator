@@ -4,15 +4,10 @@ import DDS.*;
 import Messenger.MessageTypeSupportImpl;
 import OpenDDS.DCPS.DEFAULT_STATUS_MASK;
 import OpenDDS.DCPS.TheParticipantFactory;
-import OpenDDS.DCPS.TheServiceParticipant;
 import common.ConnectionDetails;
 import common.IConsumer;
 import common.IProducer;
-import org.omg.CORBA.*;
-import org.omg.CORBA.Object;
 import org.omg.CORBA.StringSeqHolder;
-
-import java.io.File;
 import java.util.List;
 import java.util.Map;
 
@@ -160,9 +155,6 @@ public class DDSCustomConsumer extends IConsumer {
             System.err.println("ERROR: wait() failed.");
             return;
         }
-
-        System.out.println("Subscriber Report Validity");
-        listener.report_validity();
 
         ws.detach_condition(gc);
 
