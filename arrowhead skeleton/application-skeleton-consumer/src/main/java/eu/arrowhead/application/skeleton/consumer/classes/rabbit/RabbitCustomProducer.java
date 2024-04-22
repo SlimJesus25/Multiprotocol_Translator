@@ -48,6 +48,10 @@ public class RabbitCustomProducer extends IProducer {
         factory = settings.getRabbitSettings().getConnectionFactory();
         factory.setHost(this.getConnectionDetails().getAddress());
 
+        // TODO needs to change the way.
+        factory.setUsername("admin");
+        factory.setPassword("admin");
+
         try {
             Connection connection = factory.newConnection();
             channel = connection.createChannel();
@@ -95,18 +99,18 @@ public class RabbitCustomProducer extends IProducer {
 
             AtomicBoolean flag = new AtomicBoolean(true);
 
-            if(settings.getQos() == 1){
+            if (settings.getQos() == 0) {
+                produceMessage(queueName, properties, message);
+            }else if(settings.getQos() == 1){
 
                 channel.confirmSelect();
 
                 channel.addConfirmListener((sequenceNumber, multiple) -> {
                     synchronized (this.mutex) {
-                        logger.info("RabbitMQ: Mensage sent with QoS 1! " + Thread.currentThread().getName());
                         flag.set(false);
                     }
                     }, (sequenceNumber, multiple) -> {
                     synchronized (this.mutex) {
-                        logger.info("RabbitMQ: Mensage NOT sent with QoS 1! " + Thread.currentThread().getName());
                         flag.set(false);
                     }
 
@@ -116,20 +120,14 @@ public class RabbitCustomProducer extends IProducer {
                 while(retries-- >= 0){
                     synchronized (this.mutex) {
                         if(flag.get()) {
-                            logger.info("Thread info: " + Thread.currentThread().getName());
                             produceMessage(queueName, properties, message);
                         }
                     }
                 }
-
-            }
-
-            if (settings.getQos() == 0) {
-                produceMessage(queueName, properties, message);
             } else {
                 channel.confirmSelect();
                 while (!confirmed) {
-                    produceMessage(queueName,properties, message);
+                    produceMessage(queueName, properties, message);
                     confirmed = channel.waitForConfirms();
                 }
             }
