@@ -49,6 +49,8 @@ public class RabbitCustomConsumer extends IConsumer {
     private void connect() {
         factory = settings.getRabbitSettings().getConnectionFactory();
         factory.setHost(this.getConnectionDetails().getAddress());
+        factory.setUsername("admin");
+        factory.setPassword("admin");
         try {
             Connection connection = factory.newConnection();
             channel = connection.createChannel();
@@ -96,7 +98,7 @@ public class RabbitCustomConsumer extends IConsumer {
 
                         String messageId = properties.getMessageId();
 
-                        if (settings.getQos()==2) {
+                        if (settings.getQos() == 2) {
                             if (!qosRepository.messageExists(messageId)) {
                                 qosRepository.registerNewMessage(messageId);
                                 OnMessageReceived(settings.getRoutingKey(), new String(body, StandardCharsets.UTF_8));
@@ -105,7 +107,7 @@ public class RabbitCustomConsumer extends IConsumer {
                                 numberOfMessages++;
                             }
                         } else {
-                            OnMessageReceived(settings.getRoutingKey(),new String(body, StandardCharsets.UTF_8));
+                            OnMessageReceived(settings.getRoutingKey(), new String(body, StandardCharsets.UTF_8));
 
                             lastMessage = new String(body, StandardCharsets.UTF_8);
                             numberOfMessages++;
