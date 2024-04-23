@@ -43,6 +43,25 @@ public class DDSCustomProducer extends IProducer {
     private List<Integer> availableProcessors = new ArrayList<>();
     private List<Double> sysLoadAvg = new ArrayList<>();
 
+    private List<Message> messageBatch = new ArrayList<>();
+    private final int batchSize = 100;
+    private final int batchTimeout = 2000;
+    private long lastSentTime = System.currentTimeMillis();
+
+    private void addToBatch(Message message, MessageDataWriter mdw, int handle){
+        messageBatch.add(message);
+        if(messageBatch.size() >= batchSize || (System.currentTimeMillis() - lastSentTime) >= batchTimeout){
+            sendBatch(mdw, handle);
+            lastSentTime = System.currentTimeMillis();
+        }
+    }
+
+    private void sendBatch(MessageDataWriter mdw, int handle){
+        for(Message msg : messageBatch){
+            mdw.write(msg, handle);
+        }
+    }
+
     public DDSCustomProducer(ConnectionDetails connectionDetails, Map<String, String> settings) {
         super(connectionDetails, settings);
         this.settings = new PubSubSettings(settings);
@@ -166,85 +185,98 @@ public class DDSCustomProducer extends IProducer {
 
     }
 
+    /*
+         This needs to be synchronized because of race conditions!
+         Imagine the following scenario: There is one producer, MQTT for instance. And there are three consumers,
+         all of them DDS. If
+    */
     @Override
-    public void produce(String topic, String message) {
+    public synchronized void produce(String topic, String message) {
 
-        if (numberOfMessages == 1) {
-            Utils.threads(threadCount, threadPeakCount);
-            Utils.memory(heapUsage, nonHeapUsage);
+        synchronized(this) {
+            if (numberOfMessages == 1) {
+                Utils.threads(threadCount, threadPeakCount);
+                Utils.memory(heapUsage, nonHeapUsage);
 
-            thing = System.currentTimeMillis();
-        }
-
-        numberOfMessages++;
-
-        topic = this.topic;
-        StatusCondition sc = this.dataWriter.get_statuscondition();
-        sc.set_enabled_statuses(PUBLICATION_MATCHED_STATUS.value);
-        WaitSet ws = new WaitSet();
-        ws.attach_condition(sc);
-        PublicationMatchedStatusHolder matched =
-                new PublicationMatchedStatusHolder(new PublicationMatchedStatus());
-        Duration_t timeout = new Duration_t(DURATION_INFINITE_SEC.value,
-                DURATION_INFINITE_NSEC.value);
-
-
-        while (true) {
-            final int result = this.dataWriter.get_publication_matched_status(matched);
-            if (result != RETCODE_OK.value) {
-                System.err.println("ERROR: get_publication_matched_status()" +
-                        "failed.");
-                return;
+                thing = System.currentTimeMillis();
             }
 
-            if (matched.value.current_count >= 1) {
-                // System.out.println("Publisher Matched");
-                break;
+
+            numberOfMessages++;
+
+            topic = this.topic;
+            StatusCondition sc = this.dataWriter.get_statuscondition();
+            sc.set_enabled_statuses(PUBLICATION_MATCHED_STATUS.value);
+            WaitSet ws = new WaitSet();
+            ws.attach_condition(sc);
+            PublicationMatchedStatusHolder matched =
+                    new PublicationMatchedStatusHolder(new PublicationMatchedStatus());
+            Duration_t timeout = new Duration_t(DURATION_INFINITE_SEC.value,
+                    DURATION_INFINITE_NSEC.value);
+
+
+            while (true) {
+                final int result = this.dataWriter.get_publication_matched_status(matched);
+                if (result != RETCODE_OK.value) {
+                    System.err.println("ERROR: get_publication_matched_status()" +
+                            "failed.");
+                    return;
+                }
+
+                if (matched.value.current_count >= 1) {
+                    // System.out.println("Publisher Matched");
+                    break;
+                }
+
+                ConditionSeqHolder cond = new ConditionSeqHolder(new Condition[]{});
+                if (ws.wait(cond, timeout) != RETCODE_OK.value) {
+                    System.err.println("ERROR: wait() failed.");
+                    return;
+                }
             }
 
-            ConditionSeqHolder cond = new ConditionSeqHolder(new Condition[]{});
-            if (ws.wait(cond, timeout) != RETCODE_OK.value) {
-                System.err.println("ERROR: wait() failed.");
-                return;
+            ws.detach_condition(sc);
+            MessageDataWriter mdw = MessageDataWriterHelper.narrow(this.dataWriter);
+            Message msg = new Message();
+            msg.subject_id = this.count;
+            int handle = mdw.register_instance(msg);
+            msg.from = this.settings.getClientId();
+            msg.subject = topic;
+            msg.text = message;
+            msg.count = 1;
+            this.count = this.numberOfMessages;
+            int ret = RETCODE_TIMEOUT.value;
+
+
+            addToBatch(msg, mdw, handle);
+            /*
+            for (; msg.count < amount; ++msg.count) {
+                while ((ret = mdw.write(msg, handle)) == RETCODE_TIMEOUT.value) {
+                }
+                if (ret != RETCODE_OK.value) {
+                    System.err.println("ERROR " + msg.count +
+                            " write() returned " + ret);
+                }
             }
-        }
+             */
 
-        ws.detach_condition(sc);
-        MessageDataWriter mdw = MessageDataWriterHelper.narrow(this.dataWriter);
-        Message msg = new Message();
-        msg.subject_id = this.count;
-        int handle = mdw.register_instance(msg);
-        msg.from = this.settings.getClientId();
-        msg.subject = topic;
-        msg.text = message;
-        msg.count = 1;
-        this.count = this.numberOfMessages;
-        int ret = RETCODE_TIMEOUT.value;
-        for (; msg.count < amount; ++msg.count) {
-            while ((ret = mdw.write(msg, handle)) == RETCODE_TIMEOUT.value) {
+            if (this.numberOfMessages == 50000f || this.numberOfMessages == 25000f || this.numberOfMessages == 75000f) {
+                Utils.threads(threadCount, threadPeakCount);
+                Utils.memory(heapUsage, nonHeapUsage);
             }
-            if (ret != RETCODE_OK.value) {
-                System.err.println("ERROR " + msg.count +
-                        " write() returned " + ret);
+
+
+            if (numberOfMessages == 100000f) {
+                long execTime = System.currentTimeMillis() - thing;
+                log.info("Messages per second + " + (100000f / (execTime / 1000f)));
+                log.info("Execution time: " + execTime / 1000f);
+                Utils.cpu(availableProcessors, sysLoadAvg);
+                Utils.cpuInfo(availableProcessors, sysLoadAvg, log);
+                Utils.memoryInfo(heapUsage, nonHeapUsage, log);
+                Utils.threadsInfo(threadCount, threadPeakCount, log);
+                numberOfMessages = 0;
+                clearLists();
             }
-        }
-
-        if(this.numberOfMessages == 50000f || this.numberOfMessages == 25000f || this.numberOfMessages == 75000f){
-            Utils.threads(threadCount, threadPeakCount);
-            Utils.memory(heapUsage, nonHeapUsage);
-        }
-
-
-        if (numberOfMessages == 100000f) {
-            long execTime = System.currentTimeMillis() - thing;
-            log.info("Messages per second + " + (100000f / (execTime / 1000f)));
-            log.info("Execution time: " + execTime / 1000f);
-            Utils.cpu(availableProcessors, sysLoadAvg);
-            Utils.cpuInfo(availableProcessors, sysLoadAvg, log);
-            Utils.memoryInfo(heapUsage, nonHeapUsage, log);
-            Utils.threadsInfo(threadCount, threadPeakCount, log);
-            numberOfMessages = 0;
-            clearLists();
         }
 
     }
@@ -257,6 +289,4 @@ public class DDSCustomProducer extends IProducer {
         this.threadPeakCount.clear();
         this.sysLoadAvg.clear();
     }
-
-
 }
