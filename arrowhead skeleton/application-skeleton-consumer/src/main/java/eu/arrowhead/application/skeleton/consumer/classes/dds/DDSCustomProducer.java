@@ -53,6 +53,7 @@ public class DDSCustomProducer extends IProducer {
         if(messageBatch.size() >= batchSize || (System.currentTimeMillis() - lastSentTime) >= batchTimeout){
             sendBatch(mdw, handle);
             lastSentTime = System.currentTimeMillis();
+            messageBatch.clear();
         }
     }
 
