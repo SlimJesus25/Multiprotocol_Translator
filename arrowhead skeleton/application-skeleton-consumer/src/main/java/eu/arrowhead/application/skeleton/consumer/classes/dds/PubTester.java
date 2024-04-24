@@ -10,13 +10,35 @@ import OpenDDS.DCPS.TheParticipantFactory;
 import org.omg.CORBA.StringSeqHolder;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 
 public class PubTester {
 
-    private static final String topic = "cards2";
-    private static final int qos = 2;
-    private static int amount = 2;
-    private static final String message = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME);
+    private static final String topic = "ABC";
+    private static final int qos = 0;
+    private static int amount = 100000;
+    private static final String message = "Teste";
+
+    private static List<Message> messageBatch = new ArrayList<>();
+    private static int batchSize = 100;
+    private static int batchTimeout = 1000;
+    private static long lastSentTime = System.currentTimeMillis();
+
+    private static void addToBatch(Message message, MessageDataWriter mdw, int handle){
+        messageBatch.add(message);
+        if(messageBatch.size() >= batchSize || (System.currentTimeMillis() - lastSentTime) >= batchTimeout){
+            sendBatch(mdw, handle);
+            lastSentTime = System.currentTimeMillis();
+            messageBatch.clear();
+        }
+    }
+
+    private static void sendBatch(MessageDataWriter mdw, int handle){
+        for(Message msg : messageBatch){
+            mdw.write(msg, handle);
+        }
+    }
 
     public static void main(String[] args){
 
@@ -67,19 +89,21 @@ public class PubTester {
         }
 
         DataWriterQos dw_qos = new DataWriterQos();
+
         dw_qos.deadline = new DeadlineQosPolicy();
+
 
         boolean reliable = true;
         dw_qos.reliability = new ReliabilityQosPolicy();
         dw_qos.deadline = new DeadlineQosPolicy();
         if(qos == 0){
-            dw_qos.reliability.kind = ReliabilityQosPolicyKind.from_int(ReliabilityQosPolicyKind._BEST_EFFORT_RELIABILITY_QOS);
+            reliable = false;
             dw_qos.deadline.period = new Duration_t();
             reliable = false;
         }else if(qos == 1){
             dw_qos.reliability.kind = ReliabilityQosPolicyKind.from_int(ReliabilityQosPolicyKind._RELIABLE_RELIABILITY_QOS);
             dw_qos.deadline.period = new Duration_t();
-            amount = 5;
+            // amount = 5;
         }else{
             dw_qos.reliability.kind = ReliabilityQosPolicyKind.from_int(ReliabilityQosPolicyKind._RELIABLE_RELIABILITY_QOS);
             dw_qos.deadline.period = new Duration_t();
@@ -117,9 +141,17 @@ public class PubTester {
         DataWriterQosHolder qosh = new DataWriterQosHolder(dw_qos);
         pub.get_default_datawriter_qos(qosh);
         qosh.value.history.kind = HistoryQosPolicyKind.KEEP_ALL_HISTORY_QOS;
+        qosh.value.resource_limits.max_samples = 200000;
+        qosh.value.resource_limits.max_instances = 10;
+        qosh.value.resource_limits.max_samples_per_instance = 10000;
+        qosh.value.reliability.max_blocking_time.nanosec = 0;
+
         if (reliable) {
             qosh.value.reliability.kind =
                     ReliabilityQosPolicyKind.RELIABLE_RELIABILITY_QOS;
+        }else{
+            qosh.value.reliability.kind =
+                    ReliabilityQosPolicyKind.BEST_EFFORT_RELIABILITY_QOS;
         }
 
         DataWriter dataWriter = pub.create_datawriter(top,
@@ -130,6 +162,7 @@ public class PubTester {
             System.err.println("ERROR: DataWriter creation failed");
             return;
         }
+
         System.out.println("Publisher Created DataWriter");
 
         StatusCondition sc = dataWriter.get_statuscondition();
@@ -172,6 +205,11 @@ public class PubTester {
         msg.text = message;
         msg.count = 1;
         int ret = RETCODE_TIMEOUT.value;
+
+        for(;msg.count < amount; ++msg.count)
+            addToBatch(msg, mdw, handle);
+
+        /*
         for (; msg.count < amount; ++msg.count) {
             while ((ret = mdw.write(msg, handle)) == RETCODE_TIMEOUT.value) {
             }
@@ -179,11 +217,9 @@ public class PubTester {
                 System.err.println("ERROR " + msg.count +
                         " write() returned " + ret);
             }
-            try {
-                Thread.sleep(100);
-            } catch(InterruptedException ie) {
-            }
         }
+
+         */
 
         /*
         while (matched.value.current_count != 0) {
