@@ -8,13 +8,9 @@ import common.ConnectionDetails;
 import common.IProducer;
 import eu.arrowhead.application.skeleton.consumer.classes.QoSDatabase.ExactlyOnceProducerHelper;
 import eu.arrowhead.application.skeleton.consumer.classes.Utils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
@@ -61,7 +57,7 @@ public class RabbitCustomProducer extends IProducer {
         boolean confirmed = false;
 
         if (numberOfMessages == 1) {
-            utilsID = Utils.initializeCouting();
+            utilsID = Utils.initializeCounting();
         }
 
         numberOfMessages++;

@@ -186,7 +186,7 @@ public class DDSCustomProducer extends IProducer {
 
         synchronized(this) {
             if (numberOfMessages == 1) {
-                utilsID = Utils.initializeCouting();
+                utilsID = Utils.initializeCounting();
             }
 
             numberOfMessages++;

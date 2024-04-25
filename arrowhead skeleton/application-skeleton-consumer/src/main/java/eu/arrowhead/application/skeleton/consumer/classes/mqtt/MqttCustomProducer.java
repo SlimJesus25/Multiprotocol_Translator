@@ -45,7 +45,7 @@ public class MqttCustomProducer extends IProducer {
 
 
         if (numberOfMessages == 1) {
-            utilsID = Utils.initializeCouting();
+            utilsID = Utils.initializeCounting();
         }
 
         numberOfMessages++;
