@@ -17,17 +17,17 @@ import java.util.Map;
 
 public class MqttCustomProducer extends IProducer {
 
-    private Logger log = LoggerFactory.getLogger(MqttCustomProducer.class);
+    private final Logger log = LoggerFactory.getLogger(MqttCustomProducer.class);
     private MqttClient client;
-    private MqttSettings settings;
+    private final MqttSettings settings;
     private int numberOfMessages = 1;
     long thing = System.currentTimeMillis();
-    private List<Integer> threadCount = new ArrayList<>();
-    private List<Integer> threadPeakCount = new ArrayList<>();
-    private List<String> heapUsage = new ArrayList<>();
-    private List<String> nonHeapUsage = new ArrayList<>();
-    private List<Integer> availableProcessors = new ArrayList<>();
-    private List<Double> sysLoadAvg = new ArrayList<>();
+    private final List<Integer> threadCount = new ArrayList<>();
+    private final List<Integer> threadPeakCount = new ArrayList<>();
+    private final List<String> heapUsage = new ArrayList<>();
+    private final List<String> nonHeapUsage = new ArrayList<>();
+    private final List<Integer> availableProcessors = new ArrayList<>();
+    private final List<Double> sysLoadAvg = new ArrayList<>();
 
     public MqttCustomProducer(ConnectionDetails connectionDetails, Map<String,String> settings) {
         super(connectionDetails,settings);
@@ -64,7 +64,7 @@ public class MqttCustomProducer extends IProducer {
 
         String publishToTopic;
 
-        if (settings.getTopic().equals("")) {
+        if (settings.getTopic().isEmpty()) {
             publishToTopic = this.topicFromConsumer(topic);
         } else {
             publishToTopic = settings.getTopic();
@@ -74,20 +74,29 @@ public class MqttCustomProducer extends IProducer {
 
             if (!client.isConnected())
                 client.connect();
-            // log.info("Publishing mqtt Message to " + cd + " at topic " + publishToTopic);
-            // log.info("Message content - " + message + "\n");
 
             MqttMessage mqttMessage = new MqttMessage(message.getBytes());
             MqttConnectOptions conn = new MqttConnectOptions();
-            mqttMessage.setQos(settings.getQos());
-            client.publish(publishToTopic,mqttMessage);
+            int qos = settings.getQos();
+            boolean dup;
 
+            if(qos == 0){
+                dup = configureParameters(mqttMessage, conn, true, false);
+            }else if(qos == 1){
+                dup = configureParameters(mqttMessage, conn, false, true);
+            }else if(qos == 2){
+                dup = configureParameters(mqttMessage, conn, false, true);
+            }else{
+                throw new RuntimeException("Invalid QoS level!");
+            }
 
+            if(((qos == 0 || qos == 2) && !dup) || qos == 1) {
+                mqttMessage.setQos(qos);
+                client.publish(publishToTopic, mqttMessage);
+            }
         } catch (MqttException e) {
-            // throw new RuntimeException(e);
             log.warn("\n" + new RuntimeException(e) + "\n");
         }
-
 
         if(this.numberOfMessages == 50000f || this.numberOfMessages == 25000f || this.numberOfMessages == 75000f){
             Utils.threads(threadCount, threadPeakCount);
@@ -105,6 +114,12 @@ public class MqttCustomProducer extends IProducer {
             numberOfMessages = 0;
             clearLists();
         }
+    }
+
+    private boolean configureParameters(MqttMessage mqttMessage, MqttConnectOptions conn, boolean cleanSession, boolean retained){
+        mqttMessage.setRetained(retained);
+        conn.setCleanSession(cleanSession);
+        return mqttMessage.isDuplicate();
     }
 
     public int getNumberOfMessages() {
