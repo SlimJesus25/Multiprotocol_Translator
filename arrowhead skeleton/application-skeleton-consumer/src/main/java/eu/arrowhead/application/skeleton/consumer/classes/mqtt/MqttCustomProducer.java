@@ -83,7 +83,7 @@ public class MqttCustomProducer extends IProducer {
             if(qos == 0){
                 dup = configureParameters(mqttMessage, conn, true, false);
             }else if(qos == 1){
-                dup = configureParameters(mqttMessage, conn, false, true);
+                dup = configureParameters(mqttMessage, conn, true, true);
             }else if(qos == 2){
                 dup = configureParameters(mqttMessage, conn, false, true);
             }else{
