@@ -14,9 +14,7 @@ public class MqttCustomConsumer extends IConsumer {
 
     private MqttClient mqttClient;
     private final IMqttMessageListener messageListener;
-
-    private MqttSettings settings;
-
+    private final MqttSettings settings;
     private final Logger logger = LogManager.getLogger(MqttCustomConsumer.class);
 
     public MqttCustomConsumer(ConnectionDetails connectionDetails, List<IProducer> producer, Map<String, String> settings) {
@@ -27,7 +25,6 @@ public class MqttCustomConsumer extends IConsumer {
 
     @Override
     public void run() {
-        // logger.info("ACABEI DE SER INICIADO! MQTT");
         connect(getConnectionDetails().getAddress(),getConnectionDetails().getPort());
     }
 
@@ -59,12 +56,12 @@ public class MqttCustomConsumer extends IConsumer {
         }
 
         @Override
-        public void messageArrived(String s, MqttMessage mqttMessage) throws Exception {
-            // logger.info("Message arrived at mqtt " + consumer.getConnectionDetails() + " at topic " + s + " with content \"" + mqttMessage.toString() + "\"");
-            consumer.lastMessage = mqttMessage.toString();
-            consumer.numberOfMessages++;
-
-            consumer.OnMessageReceived(s,mqttMessage.toString());
+        public void messageArrived(String topic, MqttMessage mqttMessage) {
+            if(!mqttMessage.isDuplicate()) {
+                consumer.lastMessage = mqttMessage.toString();
+                consumer.numberOfMessages++;
+                consumer.OnMessageReceived(topic, mqttMessage.toString());
+            }
         }
     }
 
