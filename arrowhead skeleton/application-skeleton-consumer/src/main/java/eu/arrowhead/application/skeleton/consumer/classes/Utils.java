@@ -1,7 +1,12 @@
 package eu.arrowhead.application.skeleton.consumer.classes;
 
 import java.lang.management.*;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import org.slf4j.Logger;
 
 /**
  * This class contains methods that can be used by all classes.
@@ -11,8 +16,16 @@ public class Utils {
     private static final MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
     private static final ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
     private static final OperatingSystemMXBean osMXBean = ManagementFactory.getOperatingSystemMXBean();
-    // private static List<GarbageCollectorMXBean> gcMXBeans = ManagementFactory.getGarbageCollectorMXBeans();
 
+    private static final Map<Long, List<Integer>> threadCount = new HashMap<>();
+    private static final Map<Long, List<Integer>> threadPeakCount = new HashMap<>();
+    private static final Map<Long, List<String>> heapUsage = new HashMap<>();
+    private static final Map<Long, List<String>> nonHeapUsage = new HashMap<>();
+    private static final Map<Long, List<Integer>> availableProcessors = new HashMap<>();
+    private static final Map<Long, List<Double>> sysLoadAvg = new HashMap<>();
+    private static final Map<Long, Long> timeMillis = new HashMap<>();
+
+    private static long identifier = 0;
 
     /**
      * Stores information, related to heap and non-heap memory at invoking time, on the parameter lists.
@@ -93,4 +106,59 @@ public class Utils {
         systemLoadAvg.forEach(v -> log.info(String.valueOf(v)));
     }
 
+    private synchronized static void incrementIdentifier(){
+        identifier++;
+    }
+
+    public static synchronized long initializeCouting(){
+        incrementIdentifier();
+
+        List<Integer> tcl = new ArrayList<>();
+        List<Integer> tpc = new ArrayList<>();
+        List<String> hu = new ArrayList<>();
+        List<String> nhu = new ArrayList<>();
+
+        threadCount.put(identifier, tcl);
+        threadPeakCount.put(identifier, tpc);
+        heapUsage.put(identifier, hu);
+        nonHeapUsage.put(identifier, nhu);
+
+        threads(tcl, tpc);
+        memory(hu, nhu);
+
+        timeMillis.put(identifier, System.currentTimeMillis());
+
+        return identifier;
+    }
+
+    public static synchronized void halfCounting(long id){
+        threads(threadCount.get(id), threadPeakCount.get(id));
+        memory(heapUsage.get(id), nonHeapUsage.get(id));
+    }
+
+    public static synchronized void pointReached(long id, Logger log){
+
+        long execTime = System.currentTimeMillis() - timeMillis.get(id);
+
+        log.info("Messages per second + " + (100000f / (execTime / 1000f)));
+        log.info("Execution time: " + execTime / 1000f);
+
+        Utils.cpu(availableProcessors.get(id), sysLoadAvg.get(id));
+        Utils.cpuInfo(availableProcessors.get(id), sysLoadAvg.get(id), log);
+        Utils.memoryInfo(heapUsage.get(id), nonHeapUsage.get(id), log);
+        Utils.threadsInfo(threadCount.get(id), threadPeakCount.get(id), log);
+    }
+
+    /**
+     *
+     * Note: This doesn't need to be synchronized because the only one that invokes it (pointReached) already is.
+     */
+    private static void clearLists(){
+        availableProcessors.clear();
+        heapUsage.clear();
+        nonHeapUsage.clear();
+        threadCount.clear();
+        threadPeakCount.clear();
+        sysLoadAvg.clear();
+    }
 }

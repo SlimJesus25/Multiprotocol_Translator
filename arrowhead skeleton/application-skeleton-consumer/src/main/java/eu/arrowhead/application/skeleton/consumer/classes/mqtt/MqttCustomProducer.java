@@ -10,9 +10,6 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 public class MqttCustomProducer extends IProducer {
@@ -21,13 +18,7 @@ public class MqttCustomProducer extends IProducer {
     private MqttClient client;
     private final MqttSettings settings;
     private int numberOfMessages = 1;
-    long thing = System.currentTimeMillis();
-    private final List<Integer> threadCount = new ArrayList<>();
-    private final List<Integer> threadPeakCount = new ArrayList<>();
-    private final List<String> heapUsage = new ArrayList<>();
-    private final List<String> nonHeapUsage = new ArrayList<>();
-    private final List<Integer> availableProcessors = new ArrayList<>();
-    private final List<Double> sysLoadAvg = new ArrayList<>();
+    private long utilsID;
 
     public MqttCustomProducer(ConnectionDetails connectionDetails, Map<String,String> settings) {
         super(connectionDetails,settings);
@@ -54,10 +45,7 @@ public class MqttCustomProducer extends IProducer {
 
 
         if (numberOfMessages == 1) {
-            Utils.threads(threadCount, threadPeakCount);
-            Utils.memory(heapUsage, nonHeapUsage);
-
-            thing = System.currentTimeMillis();
+            utilsID = Utils.initializeCouting();
         }
 
         numberOfMessages++;
@@ -99,20 +87,12 @@ public class MqttCustomProducer extends IProducer {
         }
 
         if(this.numberOfMessages == 50000f || this.numberOfMessages == 25000f || this.numberOfMessages == 75000f){
-            Utils.threads(threadCount, threadPeakCount);
-            Utils.memory(heapUsage, nonHeapUsage);
+            Utils.halfCounting(utilsID);
         }
 
         if (numberOfMessages == 100000) {
-            long execTime = System.currentTimeMillis() - thing;
-            log.info("Messages per second + " + (100000f / (execTime / 1000f)));
-            log.info("Execution time: " + execTime / 1000f);
-            Utils.cpu(availableProcessors, sysLoadAvg);
-            Utils.cpuInfo(availableProcessors, sysLoadAvg, log);
-            Utils.memoryInfo(heapUsage, nonHeapUsage, log);
-            Utils.threadsInfo(threadCount, threadPeakCount, log);
+            Utils.pointReached(utilsID, log);
             numberOfMessages = 0;
-            clearLists();
         }
     }
 
@@ -129,19 +109,5 @@ public class MqttCustomProducer extends IProducer {
     public MqttClient getClient() {
         return client;
     }
-
-    private void clearLists(){
-        this.availableProcessors.clear();
-        this.heapUsage.clear();
-        this.nonHeapUsage.clear();
-        this.threadCount.clear();
-        this.threadPeakCount.clear();
-        this.sysLoadAvg.clear();
-    }
-
-    /*"key.deserializer": "org.apache.kafka.common.serialization.StringDeserializer",
-            "value.deserializer": "org.apache.kafka.common.serialization.StringDeserializer",
-            "group.id": "mid"
-            */
 
 }
