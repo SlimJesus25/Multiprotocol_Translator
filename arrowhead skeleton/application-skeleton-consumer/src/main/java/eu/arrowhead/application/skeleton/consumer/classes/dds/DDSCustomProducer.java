@@ -26,23 +26,13 @@ public class DDSCustomProducer extends IProducer {
     private final PubSubSettings settings;
     private DataWriter dataWriter;
     private org.slf4j.Logger log = LoggerFactory.getLogger(DDSCustomProducer.class);
-
+    private long utilsID;
     private int numberOfMessages = 0;
-    long thing = System.currentTimeMillis();
-
     private DomainParticipant domainParticipant;
     private DomainParticipantFactory domainParticipantFactory;
     private String[] args;
     private String topic;
     private int count;
-
-    private List<Integer> threadCount = new ArrayList<>();
-    private List<Integer> threadPeakCount = new ArrayList<>();
-    private List<String> heapUsage = new ArrayList<>();
-    private List<String> nonHeapUsage = new ArrayList<>();
-    private List<Integer> availableProcessors = new ArrayList<>();
-    private List<Double> sysLoadAvg = new ArrayList<>();
-
     private List<Message> messageBatch = new ArrayList<>();
     private final int batchSize = 100;
     private final int batchTimeout = 2000;
@@ -196,12 +186,8 @@ public class DDSCustomProducer extends IProducer {
 
         synchronized(this) {
             if (numberOfMessages == 1) {
-                Utils.threads(threadCount, threadPeakCount);
-                Utils.memory(heapUsage, nonHeapUsage);
-
-                thing = System.currentTimeMillis();
+                utilsID = Utils.initializeCouting();
             }
-
 
             numberOfMessages++;
 
@@ -262,32 +248,15 @@ public class DDSCustomProducer extends IProducer {
              */
 
             if (this.numberOfMessages == 50000f || this.numberOfMessages == 25000f || this.numberOfMessages == 75000f) {
-                Utils.threads(threadCount, threadPeakCount);
-                Utils.memory(heapUsage, nonHeapUsage);
+                Utils.halfCounting(utilsID);
             }
 
 
             if (numberOfMessages == 100000f) {
-                long execTime = System.currentTimeMillis() - thing;
-                log.info("Messages per second + " + (100000f / (execTime / 1000f)));
-                log.info("Execution time: " + execTime / 1000f);
-                Utils.cpu(availableProcessors, sysLoadAvg);
-                Utils.cpuInfo(availableProcessors, sysLoadAvg, log);
-                Utils.memoryInfo(heapUsage, nonHeapUsage, log);
-                Utils.threadsInfo(threadCount, threadPeakCount, log);
+                Utils.pointReached(utilsID, log);
                 numberOfMessages = 0;
-                clearLists();
             }
         }
 
-    }
-
-    private void clearLists(){
-        this.availableProcessors.clear();
-        this.heapUsage.clear();
-        this.nonHeapUsage.clear();
-        this.threadCount.clear();
-        this.threadPeakCount.clear();
-        this.sysLoadAvg.clear();
     }
 }

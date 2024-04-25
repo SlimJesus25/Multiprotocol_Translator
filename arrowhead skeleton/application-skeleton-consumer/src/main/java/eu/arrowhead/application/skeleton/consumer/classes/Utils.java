@@ -117,11 +117,15 @@ public class Utils {
         List<Integer> tpc = new ArrayList<>();
         List<String> hu = new ArrayList<>();
         List<String> nhu = new ArrayList<>();
+        List<Integer> ap = new ArrayList<>();
+        List<Double> sla = new ArrayList<>();
 
         threadCount.put(identifier, tcl);
         threadPeakCount.put(identifier, tpc);
         heapUsage.put(identifier, hu);
         nonHeapUsage.put(identifier, nhu);
+        availableProcessors.put(identifier, ap);
+        sysLoadAvg.put(identifier, sla);
 
         threads(tcl, tpc);
         memory(hu, nhu);
@@ -147,18 +151,5 @@ public class Utils {
         Utils.cpuInfo(availableProcessors.get(id), sysLoadAvg.get(id), log);
         Utils.memoryInfo(heapUsage.get(id), nonHeapUsage.get(id), log);
         Utils.threadsInfo(threadCount.get(id), threadPeakCount.get(id), log);
-    }
-
-    /**
-     *
-     * Note: This doesn't need to be synchronized because the only one that invokes it (pointReached) already is.
-     */
-    private static void clearLists(){
-        availableProcessors.clear();
-        heapUsage.clear();
-        nonHeapUsage.clear();
-        threadCount.clear();
-        threadPeakCount.clear();
-        sysLoadAvg.clear();
     }
 }

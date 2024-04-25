@@ -28,15 +28,8 @@ public class RabbitCustomProducer extends IProducer {
     private ConnectionFactory factory;
     private RabbitConsumerSettings settings;
     private int numberOfMessages = 1;
-    private long thing;
     private final Object mutex = new Object();
-    private final Logger logger = LogManager.getLogger(RabbitCustomProducer.class);
-    private List<Integer> threadCount = new ArrayList<>();
-    private List<Integer> threadPeakCount = new ArrayList<>();
-    private List<String> heapUsage = new ArrayList<>();
-    private List<String> nonHeapUsage = new ArrayList<>();
-    private List<Integer> availableProcessors = new ArrayList<>();
-    private List<Double> sysLoadAvg = new ArrayList<>();
+    private long utilsID;
 
     public RabbitCustomProducer(ConnectionDetails connectionDetails, Map<String,String> settings) {
         super(connectionDetails, settings);
@@ -68,10 +61,7 @@ public class RabbitCustomProducer extends IProducer {
         boolean confirmed = false;
 
         if (numberOfMessages == 1) {
-            Utils.threads(threadCount, threadPeakCount);
-            Utils.memory(heapUsage, nonHeapUsage);
-
-            thing = System.currentTimeMillis();
+            utilsID = Utils.initializeCouting();
         }
 
         numberOfMessages++;
@@ -79,7 +69,7 @@ public class RabbitCustomProducer extends IProducer {
         String queueName;
 
         // In case queue name is not referred, it will be produced to the same name as topic/queue as the producer.
-        if (settings.getQueue().equals("")) {
+        if (settings.getQueue().isEmpty()) {
             queueName = topicFromConsumer(topic);
         } else {
             queueName = settings.getQueue();
@@ -137,20 +127,12 @@ public class RabbitCustomProducer extends IProducer {
         }
 
         if(this.numberOfMessages == 50000f || this.numberOfMessages == 25000f || this.numberOfMessages == 75000f){
-            Utils.threads(threadCount, threadPeakCount);
-            Utils.memory(heapUsage, nonHeapUsage);
+            Utils.halfCounting(utilsID);
         }
 
         if (numberOfMessages == 100000) {
-            long execTime = System.currentTimeMillis() - thing;
-            log.info("Messages per second + " + (100000f / (execTime / 1000f)));
-            log.info("Execution time: " + execTime / 1000f);
-            Utils.cpu(availableProcessors, sysLoadAvg);
-            Utils.cpuInfo(availableProcessors, sysLoadAvg, log);
-            Utils.memoryInfo(heapUsage, nonHeapUsage, log);
-            Utils.threadsInfo(threadCount, threadPeakCount, log);
+            Utils.pointReached(utilsID, log);
             numberOfMessages = 0;
-            clearLists();
         }
     }
 
@@ -158,21 +140,9 @@ public class RabbitCustomProducer extends IProducer {
 
         try {
             channel.basicPublish("", queueName, properties, message.getBytes());
-
-            // logger.info("Sent Rabbit message to " + this.getConnectionDetails() + "| Message - " + message + ", to default" +
-                    // " exchange with routing key " + "\"" + settings.getQueue() + "\"");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private void clearLists(){
-        this.availableProcessors.clear();
-        this.heapUsage.clear();
-        this.nonHeapUsage.clear();
-        this.threadCount.clear();
-        this.threadPeakCount.clear();
-        this.sysLoadAvg.clear();
     }
 
     public int getNumberOfMessages() {
