@@ -3,6 +3,7 @@ package eu.arrowhead.application.skeleton.consumer.classes;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.management.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,7 +37,7 @@ public class Utils {
 
     private synchronized static void addFileWriter(long id) throws IOException {
         fileWriters.put(id, new FileWriter("statistic_logs_" + Thread.currentThread().
-                getContextClassLoader().toString() + ".txt" ));
+                getContextClassLoader().toString() + Thread.currentThread().getName() + ".log" ));
     }
 
     private synchronized static FileWriter accessFileWriter(long id){
@@ -62,7 +63,11 @@ public class Utils {
 
     private static void writeToLog(long id, String message) {
         try {
-            accessFileWriter(id).write(message);
+            accessFileWriter(id)
+                    .append("[")
+                    .append(String.valueOf(LocalDateTime.now()))
+                    .append("]\n")
+                    .append(message);
         } catch (IOException e) {
             System.err.println("An error occurred trying to write to file.");
         }
@@ -226,7 +231,7 @@ public class Utils {
         StringBuilder sb = new StringBuilder();
         sb.append("Messages per second + ").
                 append(100000f / (execTime / 1000f)).
-                append("Execution time: ").
+                append("\nExecution time: ").
                 append(execTime / 1000f);
 
         writeToLog(id, sb.toString());
