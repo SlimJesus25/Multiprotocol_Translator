@@ -1,5 +1,7 @@
 package eu.arrowhead.application.skeleton.consumer.classes;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.lang.management.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,11 +27,46 @@ public class Utils {
     private static final Map<Long, List<Integer>> availableProcessors = new HashMap<>();
     private static final Map<Long, List<Double>> sysLoadAvg = new HashMap<>();
     private static final Map<Long, Long> timeMillis = new HashMap<>();
+    private static Map<Long, FileWriter> fileWriters = new HashMap<>();
 
     /**
      * Unique identifier that lets all the maps above know which values are to be visualized/managed.
      */
     private static long identifier = 0;
+
+    private synchronized static void addFileWriter(long id) throws IOException {
+        fileWriters.put(id, new FileWriter("statistic_logs_" + Thread.currentThread().
+                getContextClassLoader().toString() + ".txt" ));
+    }
+
+    private synchronized static FileWriter accessFileWriter(long id){
+        return fileWriters.get(id);
+    }
+
+    private static void configureLogs(long id){
+
+        try {
+            addFileWriter(id);
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> fileWriters.forEach((k, v) -> {
+                try {
+                    v.flush();
+                    v.close();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            })));
+        }catch (IOException e){
+            System.err.println("It wasn't possible to create a log file.");
+        }
+    }
+
+    private static void writeToLog(long id, String message) {
+        try {
+            accessFileWriter(id).write(message);
+        } catch (IOException e) {
+            System.err.println("An error occurred trying to write to file.");
+        }
+    }
 
     /**
      * Stores information, related to heap and non-heap memory at invoking time, on the parameter lists.
@@ -130,6 +167,7 @@ public class Utils {
 
     public static long initializeCounting(){
         long myID = incrementIdentifier();
+        configureLogs(myID);
 
         List<Integer> tcl = new ArrayList<>();
         List<Integer> tpc = new ArrayList<>();
@@ -139,28 +177,16 @@ public class Utils {
         List<Double> sla = new ArrayList<>();
 
         insertNewList(myID, threadCount, tcl);
-        //threadCount.put(identifier, tcl);
-
         insertNewList(myID, threadPeakCount, tpc);
-        //threadPeakCount.put(identifier, tpc);
-
         insertNewList(myID, heapUsage, hu);
-        //heapUsage.put(identifier, hu);
-
         insertNewList(myID, nonHeapUsage, nhu);
-        //nonHeapUsage.put(identifier, nhu);
-
         insertNewList(myID, availableProcessors, ap);
-        //availableProcessors.put(identifier, ap);
-
         insertNewList(myID, sysLoadAvg, sla);
-        //sysLoadAvg.put(identifier, sla);
 
         threads(tcl, tpc);
         memory(hu, nhu);
 
         insertNewTime(myID);
-        //timeMillis.put(identifier, System.currentTimeMillis());
 
         return myID;
     }
@@ -197,8 +223,14 @@ public class Utils {
     public static void pointReached(long id, Logger log){
 
         long execTime = System.currentTimeMillis() - timeMillis.get(id);
-        log.info("Messages per second + " + (100000f / (execTime / 1000f)));
-        log.info("Execution time: " + execTime / 1000f);
+        StringBuilder sb = new StringBuilder();
+        sb.append("Messages per second + ").
+                append(100000f / (execTime / 1000f)).
+                append("Execution time: ").
+                append(execTime / 1000f);
+
+        writeToLog(id, sb.toString());
+        log.info(sb.toString());
 
         Utils.cpu(accessAvailableProcessors(id), accessSysLoadAvg(id));
         Utils.cpuInfo(accessAvailableProcessors(id), accessSysLoadAvg(id), log);
