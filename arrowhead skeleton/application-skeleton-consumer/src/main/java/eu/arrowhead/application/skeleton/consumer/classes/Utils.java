@@ -4,15 +4,11 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.management.*;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import org.slf4j.Logger;
 
 /**
  * This class has stuff related to messages per second (and other metrics) that can be used by producers/subscribers.
- *
  * TODO: Maybe make this class write to log files instead of presenting on the screen.
  */
 public class Utils {
@@ -28,12 +24,17 @@ public class Utils {
     private static final Map<Long, List<Integer>> availableProcessors = new HashMap<>();
     private static final Map<Long, List<Double>> sysLoadAvg = new HashMap<>();
     private static final Map<Long, Long> timeMillis = new HashMap<>();
-    private static Map<Long, FileWriter> fileWriters = new HashMap<>();
+    private static final Map<Long, FileWriter> fileWriters = new HashMap<>();
 
     /**
      * Unique identifier that lets all the maps above know which values are to be visualized/managed.
      */
     private static long identifier = 0;
+
+    private static final Object identifierLock = new Object();
+    private static final Object generalMapLock = new Object();
+    private static final Object timeMapLock = new Object();
+    private static final Object terminalOutputLock = new Object();
 
     private synchronized static void addFileWriter(long id) throws IOException {
         fileWriters.put(id, new FileWriter("statistic_logs_" + Thread.currentThread().
@@ -78,12 +79,12 @@ public class Utils {
      * @param heapUsage - list to store heap usage at invoking time.
      * @param nonHeapUsage - list to store non-heap usage at invoking time.
      */
-    private static void memory(List<String> heapUsage, List<String> nonHeapUsage){
+    private synchronized static void memory(List<String> heapUsage, List<String> nonHeapUsage){
         heapUsage.add(memoryMXBean.getHeapMemoryUsage().toString());
         nonHeapUsage.add(memoryMXBean.getNonHeapMemoryUsage().toString());
     }
 
-    private static void threads(List<Integer> threadsCount, List<Integer> peakThreadCount){
+    private synchronized static void threads(List<Integer> threadsCount, List<Integer> peakThreadCount){
         threadsCount.add(threadMXBean.getThreadCount());
         peakThreadCount.add(threadMXBean.getPeakThreadCount());
     }
@@ -99,75 +100,92 @@ public class Utils {
      * @param availableProcessors - list to store available processors at invoking moment.
      * @param systemLoadAvg - list to store system load average at invoking moment.
      */
-    private static void cpu(List<Integer> availableProcessors, List<Double> systemLoadAvg){
+    private synchronized static void cpu(List<Integer> availableProcessors, List<Double> systemLoadAvg){
         availableProcessors.add(osMXBean.getAvailableProcessors());
         systemLoadAvg.add(osMXBean.getSystemLoadAverage());
     }
 
-    private static void memoryInfo(List<String> heapUsage, List<String> nonHeapUsage){
-        System.out.println("\tHeap usage\n");
-        heapUsage.forEach(System.out::println);
+    private static <E> void writeToScreen(org.slf4j.Logger log, List<List<E>> lists, String... title){
 
-        System.out.println("\n\tNon-Heap Usage\n");
-        nonHeapUsage.forEach(System.out::println);
+        synchronized (terminalOutputLock) {
+            if (lists.isEmpty())
+                return;
+
+            boolean flag = title.length == 1;
+
+            int increment = -1;
+            for (List<E> l : lists) {
+                if (!flag || increment < 0)
+                    increment++;
+                if (log != null) {
+                    log.info("\t" + title[increment] + "\n");
+                    l.forEach(v -> log.info(String.valueOf(v)));
+                } else {
+                    System.out.println("\t" + title[increment] + "\n");
+                    l.forEach(System.out::println);
+                }
+            }
+        }
+    }
+
+    private static void memoryInfo(List<String> heapUsage, List<String> nonHeapUsage){
+        writeToScreen(null, Arrays.asList(heapUsage, nonHeapUsage), "Heap Usage", "Non-Heap Usage");
     }
 
     /**
      * Tries to print, either with log or System.out.println(). You can pass the log as null.
-     * @param heapUsage
-     * @param nonHeapUsage
-     * @param log
+     * @param heapUsage shows statistic information about heap memory usage.
+     * @param nonHeapUsage shows statistic information about non-heap memory usage.
+     * @param log logger to print the statistical information.
      */
     private static void memoryInfo(List<String> heapUsage, List<String> nonHeapUsage, org.slf4j.Logger log){
-        log.info("\tHeap usage\n");
-        heapUsage.forEach(log::info);
-
-        log.info("\n\tNon-Heap Usage\n");
-        nonHeapUsage.forEach(log::info);
+        writeToScreen(log, Arrays.asList(heapUsage, nonHeapUsage), "Heap usage", "Non-Heap Usage");
     }
 
     private static void threadsInfo(List<Integer> threadsCount, List<Integer> peakThreadCount){
-        System.out.println("\tThead Count\n");
-        threadsCount.forEach(System.out::println);
-
-        System.out.println("\n\tPeak Thead Count\n");
-        peakThreadCount.forEach(System.out::println);
+        writeToScreen(null, Arrays.asList(threadsCount, peakThreadCount), "Thead Count", "Peak Thead Count");
     }
 
     private static void threadsInfo(List<Integer> threadsCount, List<Integer> peakThreadCount, org.slf4j.Logger log){
-        log.info("\tThead Count\n");
-        threadsCount.forEach(v -> log.info(String.valueOf(v)));
-
-        log.info("\n\tPeak Thead Count\n");
-        peakThreadCount.forEach(v -> log.info(String.valueOf(v)));
+        writeToScreen(log, Arrays.asList(threadsCount, peakThreadCount), "Thead Count", "Peak Thead Count");
     }
 
     private static void cpuInfo(List<Integer> availableProcessors, List<Double> systemLoadAvg){
-        System.out.println("\tAvailable Processors\n");
-        availableProcessors.forEach(System.out::println);
-
-        System.out.println("\n\tSystem Load Average\n");
-        systemLoadAvg.forEach(System.out::println);
+        writeToScreen(null, Collections.singletonList(systemLoadAvg), "System Load Average");
     }
 
     private static void cpuInfo(List<Integer> availableProcessors, List<Double> systemLoadAvg, org.slf4j.Logger log){
-        log.info("\tAvailable Processors\n");
-        availableProcessors.forEach(v -> log.info(String.valueOf(v)));
-
-        log.info("\n\tSystem Load Average\n");
-        systemLoadAvg.forEach(v -> log.info(String.valueOf(v)));
+        writeToScreen(log, Collections.singletonList(systemLoadAvg), "Available Processors", "System Load Average");
     }
 
-    private synchronized static long incrementIdentifier(){
-        return ++identifier;
+    private static long incrementIdentifier(){
+        synchronized (identifierLock){
+            return ++identifier;
+        }
     }
 
-    private synchronized static <E> void insertNewList(long id, Map<Long, ? super List<E>> map, List<E> list){
-        map.put(id, list);
+    private static long accessIdentifier(){
+        synchronized (identifierLock){
+            return identifier;
+        }
     }
 
-    private synchronized static void insertNewTime(long id){
-        timeMillis.put(id, System.currentTimeMillis());
+    private static <E> void insertNewList(long id, Map<Long, ? super List<E>> map, List<E> list){
+        synchronized (generalMapLock) {
+            map.put(id, list);
+        }
+    }
+
+    private static void insertNewTime(long id){
+        synchronized (timeMapLock) {
+            timeMillis.put(id, System.currentTimeMillis());
+        }
+    }
+
+    private static long accessInitialTime(long id){
+        synchronized (timeMapLock){
+            return timeMillis.get(id);
+        }
     }
 
     public static long initializeCounting(){
@@ -196,38 +214,40 @@ public class Utils {
         return myID;
     }
 
-    private static synchronized List<Integer> accessThreadCount(long id){
+    private static List<Integer> accessThreadCount(long id){
         return threadCount.get(id);
     }
 
-    private static synchronized List<Integer> accessThreadPeakCount(long id){
+    private static List<Integer> accessThreadPeakCount(long id){
         return threadPeakCount.get(id);
     }
 
-    private static synchronized List<String> accessHeapUsage(long id){
+    private static List<String> accessHeapUsage(long id){
         return heapUsage.get(id);
     }
 
-    private static synchronized List<String> accessNonHeapUsage(long id){
+    private static List<String> accessNonHeapUsage(long id){
         return nonHeapUsage.get(id);
     }
 
-    private static synchronized List<Integer> accessAvailableProcessors(long id){
+    private static List<Integer> accessAvailableProcessors(long id){
         return availableProcessors.get(id);
     }
 
-    private static synchronized List<Double> accessSysLoadAvg(long id){
+    private static List<Double> accessSysLoadAvg(long id){
         return sysLoadAvg.get(id);
     }
 
     public static void halfCounting(long id){
-        threads(accessThreadCount(id), accessThreadPeakCount(id));
-        memory(accessHeapUsage(id), accessNonHeapUsage(id));
+        synchronized (generalMapLock) {
+            threads(accessThreadCount(id), accessThreadPeakCount(id));
+            memory(accessHeapUsage(id), accessNonHeapUsage(id));
+        }
     }
 
     public static void pointReached(long id, Logger log){
 
-        long execTime = System.currentTimeMillis() - timeMillis.get(id);
+        long execTime = System.currentTimeMillis() - accessInitialTime(id);
         StringBuilder sb = new StringBuilder();
         sb.append("Messages per second + ").
                 append(100000f / (execTime / 1000f)).
@@ -235,11 +255,16 @@ public class Utils {
                 append(execTime / 1000f);
 
         writeToLog(id, sb.toString());
-        log.info(sb.toString());
 
-        Utils.cpu(accessAvailableProcessors(id), accessSysLoadAvg(id));
-        Utils.cpuInfo(accessAvailableProcessors(id), accessSysLoadAvg(id), log);
-        Utils.memoryInfo(accessHeapUsage(id), accessNonHeapUsage(id), log);
-        Utils.threadsInfo(accessThreadCount(id), accessThreadPeakCount(id), log);
+        synchronized (terminalOutputLock) {
+            log.info(sb.toString());
+        }
+
+        synchronized (generalMapLock) {
+            cpu(accessAvailableProcessors(id), accessSysLoadAvg(id));
+            cpuInfo(accessAvailableProcessors(id), accessSysLoadAvg(id), log);
+            memoryInfo(accessHeapUsage(id), accessNonHeapUsage(id), log);
+            threadsInfo(accessThreadCount(id), accessThreadPeakCount(id), log);
+        }
     }
 }
