@@ -9,7 +9,6 @@ import common.IProducer;
 import eu.arrowhead.application.skeleton.consumer.classes.QoSDatabase.ExactlyOnceProducerHelper;
 import eu.arrowhead.application.skeleton.consumer.classes.Utils;
 import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
@@ -44,6 +43,21 @@ public class RabbitCustomProducer extends IProducer {
         try {
             Connection connection = factory.newConnection();
             channel = connection.createChannel();
+
+            // 0 is unlimited for both configurations.
+            int prefetchSize = 0;
+            int prefetchCount = 0;
+            boolean global = true;
+
+            if(settings.getQos() == 0){
+                channel.basicQos(prefetchSize, prefetchCount, global);
+            }else if(settings.getQos() == 1){
+                prefetchCount = 10;
+                channel.basicQos(prefetchSize, prefetchCount, global);
+            }else if(settings.getQos() == 2){
+                prefetchCount = 1;
+                channel.basicQos(prefetchSize, prefetchCount, global);
+            }
 
             // channel.queueDeclare(settings.getQueue(), false, false, false, null);
         } catch (IOException | TimeoutException e) {
