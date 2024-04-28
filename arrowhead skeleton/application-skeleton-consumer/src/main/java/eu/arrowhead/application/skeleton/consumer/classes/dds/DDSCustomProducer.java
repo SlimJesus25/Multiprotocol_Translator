@@ -25,21 +25,19 @@ public class DDSCustomProducer extends IProducer {
     private static int amount = 2;
     private final PubSubSettings settings;
     private DataWriter dataWriter;
-    private org.slf4j.Logger log = LoggerFactory.getLogger(DDSCustomProducer.class);
+    private final org.slf4j.Logger log = LoggerFactory.getLogger(DDSCustomProducer.class);
     private long utilsID;
     private int numberOfMessages = 0;
-    private DomainParticipant domainParticipant;
-    private DomainParticipantFactory domainParticipantFactory;
-    private String[] args;
-    private String topic;
+    private final String[] args;
+    private final String topic;
     private int count;
-    private List<Message> messageBatch = new ArrayList<>();
-    private final int batchSize = 100;
-    private final int batchTimeout = 2000;
+    private final List<Message> messageBatch = new ArrayList<>();
     private long lastSentTime = System.currentTimeMillis();
 
     private void addToBatch(Message message, MessageDataWriter mdw, int handle){
         messageBatch.add(message);
+        int batchSize = 100;
+        int batchTimeout = 2000;
         if(messageBatch.size() >= batchSize || (System.currentTimeMillis() - lastSentTime) >= batchTimeout){
             sendBatch(mdw, handle);
             lastSentTime = System.currentTimeMillis();
@@ -62,7 +60,7 @@ public class DDSCustomProducer extends IProducer {
         args[0] = "-DCPSBit";
         args[1] = "0";
         args[2] = "-DCPSConfigFile";
-        args[3] = "/home/ricardo/IdeaProjects/Multiprotocol_Translator/arrowhead skeleton/application-skeleton-consumer" +
+        args[3] = "/home/arrowhead/IdeaProjects/Multiprotocol_Translator/arrowhead skeleton/application-skeleton-consumer" +
                 "/src/main/java/eu/arrowhead/application/skeleton/consumer/classes/dds/tcp2.ini";
         args[4] = "-r";
         args[5] = "-w";
@@ -74,26 +72,26 @@ public class DDSCustomProducer extends IProducer {
 
     private void createProducer(String topic){
 
-        this.domainParticipantFactory = TheParticipantFactory.WithArgs(new StringSeqHolder(this.args));
-        if(this.domainParticipantFactory == null){
+        DomainParticipantFactory domainParticipantFactory = TheParticipantFactory.WithArgs(new StringSeqHolder(this.args));
+        if(domainParticipantFactory == null){
             System.out.println("Error");
             return;
         }
 
-        this.domainParticipant = this.domainParticipantFactory.create_participant(1, PARTICIPANT_QOS_DEFAULT.get(),
+        DomainParticipant domainParticipant = domainParticipantFactory.create_participant(1, PARTICIPANT_QOS_DEFAULT.get(),
                 null, DEFAULT_STATUS_MASK.value);
-        if(this.domainParticipant == null){
+        if(domainParticipant == null){
             System.out.println("Error");
             return;
         }
 
         MessageTypeSupportImpl servant = new MessageTypeSupportImpl();
-        if (servant.register_type(this.domainParticipant, "") != RETCODE_OK.value) {
+        if (servant.register_type(domainParticipant, "") != RETCODE_OK.value) {
             System.err.println("ERROR: register_type failed");
             return;
         }
 
-        Topic top = this.domainParticipant.create_topic(topic,
+        Topic top = domainParticipant.create_topic(topic,
                 servant.get_type_name(),
                 TOPIC_QOS_DEFAULT.get(),
                 null,
@@ -103,7 +101,7 @@ public class DDSCustomProducer extends IProducer {
             return;
         }
 
-        Publisher pub = this.domainParticipant.create_publisher(PUBLISHER_QOS_DEFAULT.get(), null,
+        Publisher pub = domainParticipant.create_publisher(PUBLISHER_QOS_DEFAULT.get(), null,
                 DEFAULT_STATUS_MASK.value);
         if (pub == null) {
             System.err.println("ERROR: Publisher creation failed");
@@ -166,9 +164,11 @@ public class DDSCustomProducer extends IProducer {
                     ReliabilityQosPolicyKind.RELIABLE_RELIABILITY_QOS;
         }
 
+        DataWriterListenerImpl dwListener = new DataWriterListenerImpl(log);
+
         this.dataWriter = pub.create_datawriter(top,
                 qosh.value,
-                null,
+                dwListener,
                 DEFAULT_STATUS_MASK.value);
         if (this.dataWriter == null) {
             System.err.println("ERROR: DataWriter creation failed");
@@ -182,9 +182,8 @@ public class DDSCustomProducer extends IProducer {
          all of them DDS. If
     */
     @Override
-    public synchronized void produce(String topic, String message) {
+    public void produce(String topic, String message) {
 
-        synchronized(this) {
             if (numberOfMessages == 1) {
                 utilsID = Utils.initializeCounting();
             }
@@ -256,7 +255,5 @@ public class DDSCustomProducer extends IProducer {
                 Utils.pointReached(utilsID, log);
                 numberOfMessages = 0;
             }
-        }
-
     }
 }
