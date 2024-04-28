@@ -13,10 +13,17 @@ import org.slf4j.Logger;
  */
 public class Utils {
 
+    /**
+     * Classes that allow the memory, thread and CPU information retrieving.
+     */
     private static final MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
     private static final ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
     private static final OperatingSystemMXBean osMXBean = ManagementFactory.getOperatingSystemMXBean();
 
+    /**
+     * Each one of these HashMaps, contain a Long key (identifier for each thread) and a List that stores the values
+     * related with that thread.
+     */
     private static final Map<Long, List<Integer>> threadCount = new HashMap<>();
     private static final Map<Long, List<Integer>> threadPeakCount = new HashMap<>();
     private static final Map<Long, List<String>> heapUsage = new HashMap<>();
@@ -31,6 +38,9 @@ public class Utils {
      */
     private static long identifier = 0;
 
+    /**
+     * Lock objects in order to obtain a fined-grained synchronization (used for 2 usages plus).
+     */
     private static final Object identifierLock = new Object();
     private static final Object generalMapLock = new Object();
     private static final Object timeMapLock = new Object();
@@ -160,6 +170,10 @@ public class Utils {
 
     private static long incrementIdentifier(){
         synchronized (identifierLock){
+
+            if(identifier == Long.MAX_VALUE-1)
+                identifier = 0;
+
             return ++identifier;
         }
     }
@@ -251,7 +265,7 @@ public class Utils {
         StringBuilder sb = new StringBuilder();
         sb.append("Messages per second + ").
                 append(100000f / (execTime / 1000f)).
-                append("\nExecution time: ").
+                append(" ||| Execution time: ").
                 append(execTime / 1000f);
 
         writeToLog(id, sb.toString());
@@ -265,6 +279,23 @@ public class Utils {
             cpuInfo(accessAvailableProcessors(id), accessSysLoadAvg(id), log);
             memoryInfo(accessHeapUsage(id), accessNonHeapUsage(id), log);
             threadsInfo(accessThreadCount(id), accessThreadPeakCount(id), log);
+        }
+
+        deleteUnnecessaryData(id);
+    }
+
+    private static void deleteUnnecessaryData(long id){
+        synchronized (generalMapLock) {
+            threadCount.remove(id);
+            threadPeakCount.remove(id);
+            heapUsage.remove(id);
+            nonHeapUsage.remove(id);
+            availableProcessors.remove(id);
+            sysLoadAvg.remove(id);
+        }
+
+        synchronized (timeMapLock) {
+            timeMillis.remove(id);
         }
     }
 }
