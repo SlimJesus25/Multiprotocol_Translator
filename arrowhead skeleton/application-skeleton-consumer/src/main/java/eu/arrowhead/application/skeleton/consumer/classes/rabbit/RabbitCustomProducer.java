@@ -3,18 +3,15 @@ package eu.arrowhead.application.skeleton.consumer.classes.rabbit;
 import com.rabbitmq.client.*;
 import common.ConnectionDetails;
 import common.IProducer;
-import eu.arrowhead.application.skeleton.consumer.classes.QoSDatabase.ExactlyOnceProducerHelper;
 import eu.arrowhead.application.skeleton.consumer.classes.Utils;
 import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
+
 
 public class RabbitCustomProducer extends IProducer {
 
@@ -113,6 +110,7 @@ public class RabbitCustomProducer extends IProducer {
     @Override
     public void produce(String topic, String message) {
 
+        // Starts counting.
         if (numberOfMessages == 1) {
             utilsID = Utils.initializeCounting();
         }
@@ -126,16 +124,20 @@ public class RabbitCustomProducer extends IProducer {
             queueName = settings.getQueue();
         }
 
+        produceMessage(queueName, message);
 
-            produceMessage(queueName, message);
         if(settings.getQos() == 0) {
             numberOfMessages++;
         }
+
+        // At 25%, 50% and 75% this collects information about memory, threads and CPU...
         if(this.numberOfMessages == 50000f || this.numberOfMessages == 25000f || this.numberOfMessages == 75000f){
             Utils.halfCounting(utilsID);
         }
 
-        if (numberOfMessages == 100000) {
+        // When the point it's reached, all the information that has been collected
+        // is going to be presented in the screen/logs. Number of messages restarts at zero.
+        if (numberOfMessages == 100000f) {
             Utils.pointReached(utilsID, log);
             numberOfMessages = 0;
         }
