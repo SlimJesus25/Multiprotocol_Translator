@@ -46,7 +46,7 @@ public class DataReaderListenerImpl extends DDS._DataReaderListenerLocalBase {
 
     public synchronized void on_data_available(DDS.DataReader reader) {
 
-        initialize_counts();
+        // initialize_counts();
 
         MessageDataReader mdr = MessageDataReaderHelper.narrow(reader);
         if (mdr == null) {
@@ -61,6 +61,7 @@ public class DataReaderListenerImpl extends DDS._DataReaderListenerLocalBase {
 
         instance.OnMessageReceived(mh.value.subject, mh.value.text);
 
+        /*
         if (status == RETCODE_OK.value) {
 
             if (sih.value.valid_data) {
@@ -96,7 +97,7 @@ public class DataReaderListenerImpl extends DDS._DataReaderListenerLocalBase {
                         + "ERROR: received unknown instance state "
                         + sih.value.instance_state);
 
-                 */
+
             }
 
         } else if (status == RETCODE_NO_DATA.value) {
@@ -104,6 +105,7 @@ public class DataReaderListenerImpl extends DDS._DataReaderListenerLocalBase {
         } else {
             // System.err.println("ERROR: read Message: Error: " + status);
         }
+        */
 
         if (mh.value.count + 1 == expected_count) {
             gc.set_trigger_value(true);

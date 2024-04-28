@@ -9,7 +9,6 @@ import Messenger.MessageHolder;
 import java.util.ArrayList;
 
 public class DataReaderListenerImpl2 extends DDS._DataReaderListenerLocalBase {
-    private int num_msgs = 0;
 
     private int expected_count = 40;
 
