@@ -16,27 +16,38 @@ import java.util.List;
 public class PubTester {
 
     private static final String topic = "ABC";
-    private static final int qos = 0;
-    private static int amount = 100000;
+    private static final int qos = 2;
+    private static int amount = 1000000;
     private static final String message = "Teste";
 
     private static List<Message> messageBatch = new ArrayList<>();
     private static int batchSize = 100;
-    private static int batchTimeout = 1000;
+    private static int batchTimeout = 2000;
     private static long lastSentTime = System.currentTimeMillis();
 
-    private static void addToBatch(Message message, MessageDataWriter mdw, int handle){
+    private static int addToBatch(Message message, MessageDataWriter mdw, int handle){
         messageBatch.add(message);
+        int size = 0;
         if(messageBatch.size() >= batchSize || (System.currentTimeMillis() - lastSentTime) >= batchTimeout){
             sendBatch(mdw, handle);
             lastSentTime = System.currentTimeMillis();
+            size = messageBatch.size();
             messageBatch.clear();
         }
+        return size;
     }
 
     private static void sendBatch(MessageDataWriter mdw, int handle){
         for(Message msg : messageBatch){
-            mdw.write(msg, handle);
+
+            int ret = RETCODE_TIMEOUT.value;
+            while(ret == RETCODE_TIMEOUT.value) {
+                ret = mdw.write(msg, handle);
+            }
+            if (ret != RETCODE_OK.value) {
+                System.err.println("ERROR " + msg.count +
+                        " write() returned " + ret);
+            }
         }
     }
 
@@ -97,7 +108,7 @@ public class PubTester {
         dw_qos.reliability = new ReliabilityQosPolicy();
         dw_qos.deadline = new DeadlineQosPolicy();
         if(qos == 0){
-            reliable = false;
+            dw_qos.reliability.kind = ReliabilityQosPolicyKind.from_int(ReliabilityQosPolicyKind._BEST_EFFORT_RELIABILITY_QOS);
             dw_qos.deadline.period = new Duration_t();
             reliable = false;
         }else if(qos == 1){
@@ -206,20 +217,26 @@ public class PubTester {
         msg.count = 1;
         int ret = RETCODE_TIMEOUT.value;
 
-        for(;msg.count < amount; ++msg.count)
-            addToBatch(msg, mdw, handle);
 
-        /*
-        for (; msg.count < amount; ++msg.count) {
-            while ((ret = mdw.write(msg, handle)) == RETCODE_TIMEOUT.value) {
+
+        if(qos > 0) {
+            while (msg.count < amount) {
+                if(msg.count % 100000 == 0)
+                    System.out.println("Done %");
+                msg.count += addToBatch(msg, mdw, handle);
             }
-            if (ret != RETCODE_OK.value) {
-                System.err.println("ERROR " + msg.count +
-                        " write() returned " + ret);
+        }else{
+            for (; msg.count < amount; ++msg.count) {
+                while ((ret = mdw.write(msg, handle)) == RETCODE_TIMEOUT.value) {
+                }
+                if (ret != RETCODE_OK.value) {
+                    System.err.println("ERROR " + msg.count +
+                            " write() returned " + ret);
+                }
             }
         }
 
-         */
+
 
         /*
         while (matched.value.current_count != 0) {
@@ -230,6 +247,12 @@ public class PubTester {
             }
         }
         */
+
+        try {
+            Thread.sleep(1000000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
 
         System.out.println("Stop Publisher");
     }
