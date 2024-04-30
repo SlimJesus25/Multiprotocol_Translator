@@ -271,7 +271,10 @@ public class Utils {
         writeToLog(id, sb.toString());
 
         synchronized (terminalOutputLock) {
-            log.info(sb.toString());
+            if(log != null)
+                log.info(sb.toString());
+            else
+                System.out.println(sb);
         }
 
         synchronized (generalMapLock) {
