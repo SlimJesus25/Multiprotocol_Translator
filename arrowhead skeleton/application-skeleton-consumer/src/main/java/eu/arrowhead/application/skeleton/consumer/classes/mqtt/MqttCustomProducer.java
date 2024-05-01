@@ -3,10 +3,7 @@ package eu.arrowhead.application.skeleton.consumer.classes.mqtt;
 import common.ConnectionDetails;
 import common.IProducer;
 import eu.arrowhead.application.skeleton.consumer.classes.Utils;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,8 +45,6 @@ public class MqttCustomProducer extends IProducer {
             utilsID = Utils.initializeCounting();
         }
 
-        numberOfMessages++;
-
         String publishToTopic;
 
         if (settings.getTopic().isEmpty()) {
@@ -75,13 +70,18 @@ public class MqttCustomProducer extends IProducer {
             }else if(qos == 2){
                 dup = configureParameters(mqttMessage, conn, false, true);
             }else{
-                throw new RuntimeException("Invalid QoS level!");
+                log.warn("Invalid QoS level, assuming level 0 (at most once)");
+                qos = 0;
+                dup = configureParameters(mqttMessage, conn, true, false);
             }
 
             if(((qos == 0 || qos == 2) && !dup) || qos == 1) {
                 mqttMessage.setQos(qos);
                 client.publish(publishToTopic, mqttMessage);
+                numberOfMessages++;
             }
+
+
         } catch (MqttException e) {
             log.warn("\n" + new RuntimeException(e) + "\n");
         }

@@ -18,10 +18,9 @@ import java.util.*;
 public class KafkaCustomProducer extends IProducer {
 
     private KafkaProducer<String, String> producer;
-    private org.slf4j.Logger log = LoggerFactory.getLogger(KafkaCustomProducer.class);
-    private ProducerConfig producerConfig;
-    private ConsumerGroupMetadata metadata2;
-    private PubSubSettings settings;
+    private final org.slf4j.Logger log = LoggerFactory.getLogger(KafkaCustomProducer.class);
+    private final ProducerConfig producerConfig;
+    private final PubSubSettings settings;
     private int numberOfMessages = 0;
     private long utilsID;
     private final Logger logger = LogManager.getLogger(KafkaCustomProducer.class);
@@ -32,7 +31,7 @@ public class KafkaCustomProducer extends IProducer {
         loadDefaults(settings);
         producerConfig = new ProducerConfig(Constants.objectifyMap(settings));
 
-        metadata2 = new ConsumerGroupMetadata(this.settings.getClientId());
+        ConsumerGroupMetadata metadata2 = new ConsumerGroupMetadata(this.settings.getClientId());
         createProducer();
     }
 
@@ -70,18 +69,22 @@ public class KafkaCustomProducer extends IProducer {
             utilsID = Utils.initializeCounting();
         }
 
-        numberOfMessages++;
-
         try {
             producer.send(record, (recordMetadata, e) -> {
                 if (e != null) {
                     logger.error("Failed producing kafka message");
                     logger.error(e.toString());
                     throw new RuntimeException(e);
+                }else{
+                    numberOfMessages++;
                 }
             });
         } catch (ProducerFencedException | OutOfOrderSequenceException | AuthorizationException e) {
             logger.warn(e);
+        }
+
+        if(settings.getQos() == 0){
+            numberOfMessages++;
         }
 
         if(this.numberOfMessages == 50000f || this.numberOfMessages == 25000f || this.numberOfMessages == 75000f){
@@ -100,22 +103,22 @@ public class KafkaCustomProducer extends IProducer {
 
         Map<String,Object> config = producerConfig.originals();
 
-            ConnectionDetails cd = this.getConnectionDetails();
-            config.put("bootstrap.servers", cd.getAddress() + ":" + cd.getPort());
+        ConnectionDetails cd = this.getConnectionDetails();
+        config.put("bootstrap.servers", cd.getAddress() + ":" + cd.getPort());
 
-            switch (settings.getQos()) {
-                case 0:
-                    config.put(ProducerConfig.ACKS_CONFIG, "0");
-                    break;
-                case 2:
-                    config.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, "true");
-                    config.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, "1");
-                case 1:
-                    config.put(ProducerConfig.ACKS_CONFIG,"all");
-                    break;
-            }
+        switch (settings.getQos()) {
+            case 0:
+                config.put(ProducerConfig.ACKS_CONFIG, "0");
+                break;
+            case 2:
+                config.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, "true");
+                config.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, "1");
+            case 1:
+                config.put(ProducerConfig.ACKS_CONFIG,"all");
+                break;
+        }
 
-            producer = new KafkaProducer<>(config);
+        producer = new KafkaProducer<>(config);
 
     }
 
