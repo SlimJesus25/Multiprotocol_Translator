@@ -24,6 +24,7 @@ public class KafkaCustomProducer extends IProducer {
     private int numberOfMessages = 0;
     private long utilsID;
     private final Logger logger = LogManager.getLogger(KafkaCustomProducer.class);
+    private boolean first = true;
 
     public KafkaCustomProducer(ConnectionDetails connectionDetails, Map<String, String> settings) {
         super(connectionDetails, settings);
@@ -65,8 +66,9 @@ public class KafkaCustomProducer extends IProducer {
 
         final ProducerRecord<String, String> record = new ProducerRecord<>(useTopic, messageId, message);
 
-        if (numberOfMessages == 1) {
+        if (numberOfMessages == 0 || first) {
             utilsID = Utils.initializeCounting();
+            first = false;
         }
 
         try {
@@ -76,6 +78,7 @@ public class KafkaCustomProducer extends IProducer {
                     logger.error(e.toString());
                     throw new RuntimeException(e);
                 }else{
+                    // log.info("Successfully produced kafka message {}", numberOfMessages);
                     numberOfMessages++;
                 }
             });
@@ -91,9 +94,10 @@ public class KafkaCustomProducer extends IProducer {
             Utils.halfCounting(utilsID);
         }
 
-        if (numberOfMessages == 100000f) {
+        if (numberOfMessages >= 100000f) {
             Utils.pointReached(utilsID, log);
-            numberOfMessages = 0;
+            numberOfMessages -= 100000;
+            first = true;
         }
     }
 

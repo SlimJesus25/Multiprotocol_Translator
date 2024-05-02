@@ -16,6 +16,7 @@ public class MqttCustomProducer extends IProducer {
     private final MqttSettings settings;
     private int numberOfMessages = 1;
     private long utilsID;
+    private boolean first = true;
 
     public MqttCustomProducer(ConnectionDetails connectionDetails, Map<String,String> settings) {
         super(connectionDetails,settings);
@@ -26,12 +27,33 @@ public class MqttCustomProducer extends IProducer {
     private void connect(String address, int port) {
         client = null;
 
-        log.info("Connected to MQTT at " + address  + ":" + port);
+        log.info("Connected to MQTT at {}:{}", address, port);
 
         try {
             client = new MqttClient("tcp://" + address + ":" + port, settings.getClientId(), new MemoryPersistence());
 
             client.connect(settings.getConnectOptions());
+
+            client.setCallback(new MqttCallback() {
+                @Override
+                public void connectionLost(Throwable throwable) {
+                    log.warn("Connection lost: {}", throwable.getMessage());
+                }
+
+                @Override
+                public void messageArrived(String s, MqttMessage mqttMessage) {
+
+                }
+
+                @Override
+                public void deliveryComplete(IMqttDeliveryToken iMqttDeliveryToken) {
+                    if(!iMqttDeliveryToken.isComplete())
+                        log.warn("Message not delivered");
+                    else
+                        numberOfMessages++;
+
+                }
+            });
         } catch (MqttException e) {
             throw new RuntimeException(e);
         }
@@ -41,8 +63,9 @@ public class MqttCustomProducer extends IProducer {
     public void produce(String topic, String message) {
 
 
-        if (numberOfMessages == 1) {
+        if (numberOfMessages == 1 || first) {
             utilsID = Utils.initializeCounting();
+            first = false;
         }
 
         String publishToTopic;
@@ -78,21 +101,25 @@ public class MqttCustomProducer extends IProducer {
             if(((qos == 0 || qos == 2) && !dup) || qos == 1) {
                 mqttMessage.setQos(qos);
                 client.publish(publishToTopic, mqttMessage);
-                numberOfMessages++;
             }
 
 
+            if(qos == 0)
+                numberOfMessages++;
+
+
         } catch (MqttException e) {
-            log.warn("\n" + new RuntimeException(e) + "\n");
+            // log.warn("\n" + new RuntimeException(e) + "\n");
         }
 
         if(this.numberOfMessages == 50000f || this.numberOfMessages == 25000f || this.numberOfMessages == 75000f){
             Utils.halfCounting(utilsID);
         }
 
-        if (numberOfMessages == 100000) {
+        if (numberOfMessages >= 100000) {
             Utils.pointReached(utilsID, log);
-            numberOfMessages = 0;
+            numberOfMessages -= 100000;
+            first = true;
         }
     }
 
