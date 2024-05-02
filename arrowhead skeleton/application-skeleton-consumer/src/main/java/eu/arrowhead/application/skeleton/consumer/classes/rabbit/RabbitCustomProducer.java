@@ -4,6 +4,7 @@ import com.rabbitmq.client.*;
 import common.ConnectionDetails;
 import common.IProducer;
 import eu.arrowhead.application.skeleton.consumer.classes.Utils;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Iterator;
@@ -15,13 +16,13 @@ import java.util.concurrent.TimeoutException;
 
 public class RabbitCustomProducer extends IProducer {
 
-    private org.slf4j.Logger log = LoggerFactory.getLogger(RabbitCustomProducer.class);
+    private final Logger log = LoggerFactory.getLogger(RabbitCustomProducer.class);
     private Channel channel;
-    private ConnectionFactory factory;
-    private RabbitConsumerSettings settings;
+    private final RabbitConsumerSettings settings;
     private int numberOfMessages = 1;
     private long utilsID;
-    private ConcurrentNavigableMap<Long, String> outstandingConfirms = new ConcurrentSkipListMap<>();
+    private boolean first = false;
+    private final ConcurrentNavigableMap<Long, String> outstandingConfirms = new ConcurrentSkipListMap<>();
 
     public RabbitCustomProducer(ConnectionDetails connectionDetails, Map<String,String> settings) {
         super(connectionDetails, settings);
@@ -30,7 +31,7 @@ public class RabbitCustomProducer extends IProducer {
     }
 
     private void connect() {
-        factory = settings.getRabbitSettings().getConnectionFactory();
+        ConnectionFactory factory = settings.getRabbitSettings().getConnectionFactory();
         factory.setHost(this.getConnectionDetails().getAddress());
 
         // TODO needs to change the way.
@@ -111,8 +112,9 @@ public class RabbitCustomProducer extends IProducer {
     public void produce(String topic, String message) {
 
         // Starts counting.
-        if (numberOfMessages == 1) {
+        if (numberOfMessages == 1 && !first) {
             utilsID = Utils.initializeCounting();
+            first = true;
         }
 
         String queueName;
@@ -139,7 +141,8 @@ public class RabbitCustomProducer extends IProducer {
         // is going to be presented in the screen/logs. Number of messages restarts at zero.
         if (numberOfMessages == 100000f) {
             Utils.pointReached(utilsID, log);
-            numberOfMessages = 0;
+            numberOfMessages = 1;
+            first = false;
         }
     }
 
