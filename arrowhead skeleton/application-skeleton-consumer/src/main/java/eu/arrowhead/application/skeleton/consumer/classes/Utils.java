@@ -268,7 +268,7 @@ public class Utils {
                 append(" ||| Execution time: ").
                 append(execTime / 1000f);
 
-        writeToLog(id, sb.toString());
+        // writeToLog(id, sb.toString());
 
         synchronized (terminalOutputLock) {
             if(log != null)
