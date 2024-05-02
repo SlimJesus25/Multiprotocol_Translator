@@ -47,6 +47,7 @@ public class DataReaderListenerImpl extends DDS._DataReaderListenerLocalBase {
     public synchronized void on_data_available(DDS.DataReader reader) {
 
         // initialize_counts();
+        num_msgs++;
 
         MessageDataReader mdr = MessageDataReaderHelper.narrow(reader);
         if (mdr == null) {
@@ -59,6 +60,7 @@ public class DataReaderListenerImpl extends DDS._DataReaderListenerLocalBase {
                 new DDS.Time_t(), 0, 0, 0, 0, 0, 0, 0, false, 0));
         int status = mdr.take_next_sample(mh, sih);
 
+        // System.out.println("Content: " + mh.value.text + " iteration: " + num_msgs);
         instance.OnMessageReceived(mh.value.subject, mh.value.text);
 
         /*
