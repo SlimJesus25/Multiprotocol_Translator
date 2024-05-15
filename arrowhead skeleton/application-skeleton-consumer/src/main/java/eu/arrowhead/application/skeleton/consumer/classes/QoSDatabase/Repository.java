@@ -2,9 +2,9 @@ package eu.arrowhead.application.skeleton.consumer.classes.QoSDatabase;
 
 public interface Repository {
 
-    public boolean registerNewMessage(String messageId);
+    void registerNewMessage(String messageId);
 
-    public boolean messageExists(String messageId);
+    boolean messageExists(String messageId);
 
-    public int getSize();
+    int getSize();
 }
