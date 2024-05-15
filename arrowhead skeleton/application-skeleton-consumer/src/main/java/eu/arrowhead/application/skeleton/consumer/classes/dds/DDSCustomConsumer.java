@@ -29,7 +29,7 @@ public class DDSCustomConsumer extends IConsumer {
         args[0] = "-DCPSBit";
         args[1] = "0";
         args[2] = "-DCPSConfigFile";
-        args[3] = "/home/ricardo/IdeaProjects/Multiprotocol_Translator/arrowhead skeleton/application-skeleton-consumer" +
+        args[3] = "/home/arrowhead/IdeaProjects/Multiprotocol_Translator/arrowhead skeleton/application-skeleton-consumer" +
                 "/src/main/java/eu/arrowhead/application/skeleton/consumer/classes/dds/tcp2.ini";
         args[4] = "-r";
         args[5] = "-w";
@@ -99,11 +99,14 @@ public class DDSCustomConsumer extends IConsumer {
         dr_qos.liveliness.kind = LivelinessQosPolicyKind.from_int(0);
         dr_qos.liveliness.lease_duration = new Duration_t();
         dr_qos.reliability.max_blocking_time = new Duration_t();
+        dr_qos.reliability.max_blocking_time.sec = 10;
+        dr_qos.reliability.max_blocking_time.nanosec = 0;
         dr_qos.destination_order = new DestinationOrderQosPolicy();
         dr_qos.destination_order.kind = DestinationOrderQosPolicyKind.from_int(0);
         dr_qos.history = new HistoryQosPolicy();
         dr_qos.history.kind = HistoryQosPolicyKind.from_int(0);
         dr_qos.resource_limits = new ResourceLimitsQosPolicy();
+        dr_qos.resource_limits.max_samples = 200000;
         dr_qos.user_data = new UserDataQosPolicy();
         dr_qos.user_data.value = new byte[0];
         dr_qos.ownership = new OwnershipQosPolicy();
