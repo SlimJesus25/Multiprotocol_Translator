@@ -11,13 +11,13 @@ public class JavaRepository implements Repository {
     private int count = 0;
 
     @Override
-    public boolean registerNewMessage(String messageId) {
+    public void registerNewMessage(String messageId) {
 
         // This won't be a huge problem, but it needs to be solved!
         if (database.size() > Constants.MAX_UNIQUE_MESSAGES) {
             database.remove(0);
         }
-        return database.put(messageId, count++) == null;
+        database.put(messageId, count++);
     }
 
     @Override
