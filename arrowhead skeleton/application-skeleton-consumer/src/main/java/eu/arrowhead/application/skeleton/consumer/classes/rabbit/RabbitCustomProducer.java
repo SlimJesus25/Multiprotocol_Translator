@@ -51,7 +51,6 @@ public class RabbitCustomProducer extends IProducer {
             boolean global = true;
 
             ConfirmCallback confirmCallback = (sequenceNumber, multiple) -> {
-                // System.out.println("acked messages: " + sequenceNumber + ", multiple: " + multiple);
                 if(multiple){
                     int amount = 0;
                     Iterator<Map.Entry<Long, String>> it = outstandingConfirms.descendingMap().entrySet().iterator();
@@ -69,7 +68,6 @@ public class RabbitCustomProducer extends IProducer {
             };
 
             ConfirmCallback nackedConfirmCallback = (sequenceNumber, multiple) -> {
-                    // System.out.println("nacked messages: " + sequenceNumber + " " + multiple);
                     if(multiple){
                         ConcurrentNavigableMap<Long, String> nAcked = outstandingConfirms.headMap(sequenceNumber, true);
                         nAcked.forEach((id, message) -> produceMessage(settings.getQueue(), message));
@@ -136,31 +134,24 @@ public class RabbitCustomProducer extends IProducer {
         }
 
         // At 25%, 50% and 75% this collects information about memory, threads and CPU...
-        if(this.numberOfMessages > 50000f && this.numberOfMessages < 75000f && half){
-            Utils.halfCounting(utilsID);
-            half = true;
-        }else if(this.numberOfMessages == 25000f && this.numberOfMessages < 50000f && quarter){
-            Utils.halfCounting(utilsID);
-            quarter = true;
-        }else if(this.numberOfMessages == 75000f && this.numberOfMessages < 100000f && threeQuarters){
-            Utils.halfCounting(utilsID);
-            threeQuarters = true;
-        }
+        boolean[] arr = new boolean[3];
+        Utils.checkValue(this.numberOfMessages, quarter, half, threeQuarters, arr, utilsID);
 
-        // When the point it's reached, all the information that has been collected
-        // is going to be presented in the screen/logs. Number of messages restarts at zero.
-        if (numberOfMessages >= 100000f) {
+        quarter = arr[0];
+        half = arr[1];
+        threeQuarters = arr[2];
+
+        if (numberOfMessages >= 100000) {
             Utils.pointReached(utilsID, log);
-            numberOfMessages -= 100000;
-            first = false;
-            half = false;
-            quarter = false;
-            threeQuarters = false;
+            this.numberOfMessages -= 100000;
+            first = true;
+            quarter = true;
+            half = true;
+            threeQuarters = true;
         }
     }
 
     private void produceMessage(String queueName, String message) {
-
         try {
             outstandingConfirms.put(channel.getNextPublishSeqNo(), message);
             channel.basicPublish("", queueName, null, message.getBytes());

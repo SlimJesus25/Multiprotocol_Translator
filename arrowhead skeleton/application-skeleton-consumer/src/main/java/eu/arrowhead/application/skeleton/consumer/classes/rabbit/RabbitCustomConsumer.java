@@ -66,8 +66,6 @@ public class RabbitCustomConsumer extends IConsumer {
                 queueName = settings.getRoutingKey();
             }
 
-            // queue = channel.queueDeclare(queueName, false, false, false, null);
-
             if (settings.getQos() == 0) {
                 channel.basicConsume(queueName, true, deliverCallback, consumerTag -> {
                 });

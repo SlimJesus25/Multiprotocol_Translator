@@ -1,15 +1,12 @@
 package eu.arrowhead.application.skeleton.consumer.classes.rabbit;
 
 import eu.arrowhead.application.skeleton.consumer.classes.Settings;
-
 import java.util.Map;
 
 public class RabbitProducerSettings extends Settings {
 
-    private RabbitSettings rabbitSettings;
-
+    private final RabbitSettings rabbitSettings;
     private String exchange = "";
-
     private String routingKey = "default";
 
     public RabbitProducerSettings(Map<String, String> settingsMap) {
@@ -20,13 +17,13 @@ public class RabbitProducerSettings extends Settings {
     }
 
     private void defineExchange(String exchange) {
-        if (exchange!=null) {
+        if (exchange != null) {
             this.exchange = exchange;
         }
     }
 
     private void defineRoutingKey(String routingKey) {
-        if (routingKey!=null) {
+        if (routingKey != null) {
             this.routingKey = routingKey;
         }
     }
@@ -34,11 +31,9 @@ public class RabbitProducerSettings extends Settings {
     public String getExchange() {
         return exchange;
     }
-
     public String getRoutingKey() {
         return routingKey;
     }
-
     public RabbitSettings getRabbitSettings() {
         return rabbitSettings;
     }
