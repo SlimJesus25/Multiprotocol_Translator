@@ -3,6 +3,7 @@ package eu.arrowhead.application.skeleton.consumer.classes.mqtt;
 import common.ConnectionDetails;
 import common.IConsumer;
 import common.IProducer;
+import eu.arrowhead.application.skeleton.consumer.classes.QoSDatabase.JavaRepository;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.paho.client.mqttv3.*;
@@ -36,7 +37,7 @@ public class MqttCustomConsumer extends IConsumer {
 
             mqttClient.connect(settings.getConnectOptions());
 
-            logger.info("Mqtt consumer connected to " + address + ":" + port + " with topic " + settings.getTopic());
+            logger.info("Mqtt consumer connected to {}:{} with topic {}", address, port, settings.getTopic());
 
             mqttClient.subscribe(topic,messageListener);
 
@@ -50,6 +51,7 @@ public class MqttCustomConsumer extends IConsumer {
     private static class MqttCustomMessageListener implements IMqttMessageListener {
 
         private final MqttCustomConsumer consumer;
+        private final JavaRepository qosRepository = new JavaRepository();
 
         public MqttCustomMessageListener(MqttCustomConsumer consumer) {
             this.consumer = consumer;
@@ -57,10 +59,16 @@ public class MqttCustomConsumer extends IConsumer {
 
         @Override
         public void messageArrived(String topic, MqttMessage mqttMessage) {
-            if(!mqttMessage.isDuplicate()) {
+            if(mqttMessage.getQos() == 0 || mqttMessage.getQos() == 1) {
                 consumer.lastMessage = mqttMessage.toString();
                 consumer.numberOfMessages++;
                 consumer.OnMessageReceived(topic, mqttMessage.toString());
+            }else if(mqttMessage.getQos() == 2) {
+                if(!this.qosRepository.messageExists(String.valueOf(mqttMessage.getId()))){
+                    this.qosRepository.registerNewMessage(String.valueOf(mqttMessage.getId()));
+                    consumer.numberOfMessages++;
+                    consumer.OnMessageReceived(topic, mqttMessage.toString());
+                }
             }
         }
     }
