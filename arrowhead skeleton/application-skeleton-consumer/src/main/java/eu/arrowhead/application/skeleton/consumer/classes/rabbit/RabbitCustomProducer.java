@@ -23,6 +23,9 @@ public class RabbitCustomProducer extends IProducer {
     private long utilsID;
     private boolean first = false;
     private final ConcurrentNavigableMap<Long, String> outstandingConfirms = new ConcurrentSkipListMap<>();
+    private boolean quarter = false;
+    private boolean half = false;
+    private boolean threeQuarters = false;
 
     public RabbitCustomProducer(ConnectionDetails connectionDetails, Map<String,String> settings) {
         super(connectionDetails, settings);
@@ -133,16 +136,26 @@ public class RabbitCustomProducer extends IProducer {
         }
 
         // At 25%, 50% and 75% this collects information about memory, threads and CPU...
-        if(this.numberOfMessages == 50000f || this.numberOfMessages == 25000f || this.numberOfMessages == 75000f){
+        if(this.numberOfMessages > 50000f && this.numberOfMessages < 75000f && half){
             Utils.halfCounting(utilsID);
+            half = true;
+        }else if(this.numberOfMessages == 25000f && this.numberOfMessages < 50000f && quarter){
+            Utils.halfCounting(utilsID);
+            quarter = true;
+        }else if(this.numberOfMessages == 75000f && this.numberOfMessages < 100000f && threeQuarters){
+            Utils.halfCounting(utilsID);
+            threeQuarters = true;
         }
 
         // When the point it's reached, all the information that has been collected
         // is going to be presented in the screen/logs. Number of messages restarts at zero.
-        if (numberOfMessages == 100000f) {
+        if (numberOfMessages >= 100000f) {
             Utils.pointReached(utilsID, log);
-            numberOfMessages = 1;
+            numberOfMessages -= 100000;
             first = false;
+            half = false;
+            quarter = false;
+            threeQuarters = false;
         }
     }
 
