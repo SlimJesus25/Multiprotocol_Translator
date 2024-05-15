@@ -5,7 +5,6 @@ import common.IProducer;
 import eu.arrowhead.application.skeleton.consumer.classes.Constants;
 import eu.arrowhead.application.skeleton.consumer.classes.PubSubSettings;
 import eu.arrowhead.application.skeleton.consumer.classes.Utils;
-import org.apache.kafka.clients.consumer.ConsumerGroupMetadata;
 import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.errors.AuthorizationException;
 import org.apache.kafka.common.errors.OutOfOrderSequenceException;
@@ -25,25 +24,24 @@ public class KafkaCustomProducer extends IProducer {
     private long utilsID;
     private final Logger logger = LogManager.getLogger(KafkaCustomProducer.class);
     private boolean first = true;
+    private boolean quarter = true;
+    private boolean half = true;
+    private boolean threeQuarters = true;
 
     public KafkaCustomProducer(ConnectionDetails connectionDetails, Map<String, String> settings) {
         super(connectionDetails, settings);
         this.settings = new PubSubSettings(settings);
         loadDefaults(settings);
         producerConfig = new ProducerConfig(Constants.objectifyMap(settings));
-
-        ConsumerGroupMetadata metadata2 = new ConsumerGroupMetadata(this.settings.getClientId());
         createProducer();
     }
 
     private void loadDefaults(Map<String,String> settings) {
-        if (!settings.containsKey("key.serializer")) {
+        if (!settings.containsKey("key.serializer"))
             settings.put("key.serializer","org.apache.kafka.common.serialization.StringSerializer");
-        }
 
-        if (!settings.containsKey("value.serializer")) {
+        if (!settings.containsKey("value.serializer"))
             settings.put("value.serializer","org.apache.kafka.common.serialization.StringSerializer");
-        }
     }
 
     @Override
@@ -51,18 +49,17 @@ public class KafkaCustomProducer extends IProducer {
 
         String useTopic;
 
-        if (settings.getTopic().isEmpty()) {
+        if (settings.getTopic().isEmpty())
             useTopic = topicFromConsumer(topic);
-        } else {
+        else
             useTopic = settings.getTopic();
-        }
+
 
         String messageId;
-        if (settings.isRandomId()) {
+        if (settings.isRandomId())
             messageId = UUID.randomUUID().toString();
-        } else {
+        else
             messageId = message;
-        }
 
         final ProducerRecord<String, String> record = new ProducerRecord<>(useTopic, messageId, message);
 
@@ -77,36 +74,38 @@ public class KafkaCustomProducer extends IProducer {
                     logger.error("Failed producing kafka message");
                     logger.error(e.toString());
                     throw new RuntimeException(e);
-                }else{
-                    // log.info("Successfully produced kafka message {}", numberOfMessages);
+                } else
                     numberOfMessages++;
-                }
+
             });
         } catch (ProducerFencedException | OutOfOrderSequenceException | AuthorizationException e) {
             logger.warn(e);
         }
 
-        if(settings.getQos() == 0){
+        if(settings.getQos() == 0)
             numberOfMessages++;
-        }
 
-        if(this.numberOfMessages == 50000f || this.numberOfMessages == 25000f || this.numberOfMessages == 75000f){
-            Utils.halfCounting(utilsID);
-        }
+        boolean[] arr = new boolean[3];
+        Utils.checkValue(this.numberOfMessages, quarter, half, threeQuarters, arr, utilsID);
 
-        if (numberOfMessages >= 100000f) {
+        quarter = arr[0];
+        half = arr[1];
+        threeQuarters = arr[2];
+
+        if (numberOfMessages >= 100000) {
             Utils.pointReached(utilsID, log);
-            numberOfMessages -= 100000;
+            this.numberOfMessages -= 100000;
             first = true;
+            quarter = true;
+            half = true;
+            threeQuarters = true;
         }
     }
 
 
     public void createProducer() {
 
-
         Map<String,Object> config = producerConfig.originals();
-
         ConnectionDetails cd = this.getConnectionDetails();
         config.put("bootstrap.servers", cd.getAddress() + ":" + cd.getPort());
 
@@ -114,19 +113,15 @@ public class KafkaCustomProducer extends IProducer {
             case 0:
                 config.put(ProducerConfig.ACKS_CONFIG, "0");
                 break;
+            case 1:
+                config.put(ProducerConfig.ACKS_CONFIG,"all");
+                break;
             case 2:
                 config.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, "true");
                 config.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, "1");
-            case 1:
-                config.put(ProducerConfig.ACKS_CONFIG,"all");
                 break;
         }
 
         producer = new KafkaProducer<>(config);
-
-    }
-
-    public int getNumberOfMessages() {
-        return numberOfMessages;
     }
 }
