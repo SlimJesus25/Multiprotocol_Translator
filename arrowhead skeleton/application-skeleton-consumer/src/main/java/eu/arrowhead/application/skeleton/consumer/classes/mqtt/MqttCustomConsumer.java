@@ -33,15 +33,9 @@ public class MqttCustomConsumer extends IConsumer {
         try {
             String topic = settings.getTopic();
             mqttClient = new MqttClient("tcp://" + address + ":" + port, settings.getClientId(), new MemoryPersistence());
-
-
             mqttClient.connect(settings.getConnectOptions());
-
             logger.info("Mqtt consumer connected to {}:{} with topic {}", address, port, settings.getTopic());
-
             mqttClient.subscribe(topic,messageListener);
-
-
         } catch (MqttException e) {
             throw new RuntimeException(e);
         }
@@ -73,7 +67,4 @@ public class MqttCustomConsumer extends IConsumer {
         }
     }
 
-    public MqttClient getMqttClient() {
-        return mqttClient;
-    }
 }

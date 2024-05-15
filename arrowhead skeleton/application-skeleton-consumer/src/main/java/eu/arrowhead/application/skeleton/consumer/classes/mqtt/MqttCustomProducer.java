@@ -17,6 +17,9 @@ public class MqttCustomProducer extends IProducer {
     private int numberOfMessages = 1;
     private long utilsID;
     private boolean first = true;
+    private boolean quarter = true;
+    private boolean half = true;
+    private boolean threeQuarters = true;
 
     public MqttCustomProducer(ConnectionDetails connectionDetails, Map<String,String> settings) {
         super(connectionDetails,settings);
@@ -62,7 +65,6 @@ public class MqttCustomProducer extends IProducer {
     @Override
     public void produce(String topic, String message) {
 
-
         if (numberOfMessages == 1 || first) {
             utilsID = Utils.initializeCounting();
             first = false;
@@ -90,12 +92,8 @@ public class MqttCustomProducer extends IProducer {
                 dup = configureParameters(mqttMessage, conn, true, false);
             }else if(qos == 1){
                 dup = configureParameters(mqttMessage, conn, true, true);
-            }else if(qos == 2){
-                dup = configureParameters(mqttMessage, conn, false, true);
             }else{
-                log.warn("Invalid QoS level, assuming level 0 (at most once)");
-                qos = 0;
-                dup = configureParameters(mqttMessage, conn, true, false);
+                dup = configureParameters(mqttMessage, conn, false, true);
             }
 
             if(((qos == 0 || qos == 2) && !dup) || qos == 1) {
@@ -103,23 +101,28 @@ public class MqttCustomProducer extends IProducer {
                 client.publish(publishToTopic, mqttMessage);
             }
 
-
             if(qos == 0)
                 numberOfMessages++;
 
 
         } catch (MqttException e) {
-            // log.warn("\n" + new RuntimeException(e) + "\n");
+            log.warn("\n" + new RuntimeException(e) + "\n");
         }
 
-        if(this.numberOfMessages == 50000f || this.numberOfMessages == 25000f || this.numberOfMessages == 75000f){
-            Utils.halfCounting(utilsID);
-        }
+        boolean[] arr = new boolean[3];
+        Utils.checkValue(this.numberOfMessages, quarter, half, threeQuarters, arr, utilsID);
+
+        quarter = arr[0];
+        half = arr[1];
+        threeQuarters = arr[2];
 
         if (numberOfMessages >= 100000) {
             Utils.pointReached(utilsID, log);
-            numberOfMessages -= 100000;
+            this.numberOfMessages -= 100000;
             first = true;
+            quarter = true;
+            half = true;
+            threeQuarters = true;
         }
     }
 
