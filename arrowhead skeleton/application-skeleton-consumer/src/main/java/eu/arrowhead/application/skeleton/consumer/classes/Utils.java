@@ -301,4 +301,21 @@ public class Utils {
             timeMillis.remove(id);
         }
     }
+
+    public static void checkValue(int numberOfMessages, boolean quarter, boolean half, boolean threeQuarters
+            , boolean[] res, long id){
+
+        Arrays.fill(res, true);
+
+        if(numberOfMessages >= 25000 && numberOfMessages < 50000 && quarter) {
+            res[0] = false;
+            Utils.halfCounting(id);
+        }else if(numberOfMessages >= 50000 && numberOfMessages < 75000 && half){
+            res[1] = false;
+            Utils.halfCounting(id);
+        }else if(numberOfMessages >= 75000 && numberOfMessages < 100000 && threeQuarters){
+            res[2] = false;
+            Utils.halfCounting(id);
+        }
+    }
 }
