@@ -57,7 +57,6 @@ public class MiddlewareSetup implements Runnable {
 
     /**
      * Creates the mapping between broker name and Consumer / Producer class to use.
-     *
      * This way, whenever the application is parsing through the properties file, it knows which type to create
      */
 
@@ -127,7 +126,6 @@ public class MiddlewareSetup implements Runnable {
 
     /**
      * Creates a new Producer instance based on properties read from the configuration file.
-     *
      * This method is only called by the loadProperties() method
      *
      * @param cd the connection details (address and port) for the broker of this producer
@@ -145,24 +143,6 @@ public class MiddlewareSetup implements Runnable {
                  IllegalAccessException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private IProducer createProducer2(ConnectionDetails cd, String name, Map<String,String> settings) {
-        IProducer producer = null;
-        switch (name) {
-            case "mqtt":
-                producer = new MqttCustomProducer(cd,settings);
-                break;
-            case "kafka":
-                producer = new KafkaCustomProducer(cd,settings);
-                break;
-            case "rabbit":
-                producer = new RabbitCustomProducer(cd,settings);
-                break;
-            case "dds":
-                producer = new DDSCustomProducer(cd, settings);
-        }
-        return producer;
     }
 
     /**
@@ -268,9 +248,6 @@ public class MiddlewareSetup implements Runnable {
             consumerMap.put(id,createConsumer(providers.get(protocol),new ArrayList<IProducer>(),protocol,props));
         }
 
-
-
-
         // Link the created consumers and producers
 
         JSONArray streamsArray = jo.getJSONArray("Streams");
@@ -284,9 +261,6 @@ public class MiddlewareSetup implements Runnable {
             String producers = stream.getString("from.producers");
 
             String consumers = stream.getString("to.consumers");
-
-            // System.out.println(consumerMap.keySet());
-            // System.out.println(producerMap.keySet());
 
             for (String consumerAux : producers.split(",")) {
                 IConsumer consumer = consumerMap.get(consumerAux);
@@ -347,6 +321,4 @@ public class MiddlewareSetup implements Runnable {
             return loadBroker(requestedService);
         }
     }
-
-
 }

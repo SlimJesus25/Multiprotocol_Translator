@@ -28,8 +28,6 @@ public class ConsumerMain implements ApplicationRunner {
 	
     @Autowired
 	private ArrowheadService arrowheadService;
-
-    
 	private final Logger logger = LogManager.getLogger( ConsumerMain.class );
 
     public static void main( final String[] args ) {
