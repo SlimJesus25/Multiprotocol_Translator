@@ -204,7 +204,7 @@ public class Utils {
 
     public static long initializeCounting(){
         long myID = incrementIdentifier();
-        configureLogs(myID);
+        // configureLogs(myID);
 
         List<Integer> tcl = new ArrayList<>();
         List<Integer> tpc = new ArrayList<>();
