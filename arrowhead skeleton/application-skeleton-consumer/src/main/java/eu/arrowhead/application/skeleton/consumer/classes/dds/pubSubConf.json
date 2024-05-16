@@ -1,0 +1,6 @@
+{
+  "qos" : 0,
+  "topic" : "ABC",
+  "amount" : 100000,
+  "message" : "Teste"
+}
