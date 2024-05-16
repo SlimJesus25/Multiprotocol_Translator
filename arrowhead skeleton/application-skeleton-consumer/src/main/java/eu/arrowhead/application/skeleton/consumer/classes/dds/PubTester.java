@@ -7,27 +7,25 @@ import Messenger.MessageDataWriterHelper;
 import Messenger.MessageTypeSupportImpl;
 import OpenDDS.DCPS.DEFAULT_STATUS_MASK;
 import OpenDDS.DCPS.TheParticipantFactory;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.omg.CORBA.StringSeqHolder;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class PubTester {
 
-    private static final String topic = "ABC";
-    private static final int qos = 2;
-    private static int amount = 1000000;
-    private static final String message = "Teste";
-
-    private static List<Message> messageBatch = new ArrayList<>();
-    private static int batchSize = 100;
-    private static int batchTimeout = 2000;
+    private static final List<Message> messageBatch = new ArrayList<>();
     private static long lastSentTime = System.currentTimeMillis();
 
     private static int addToBatch(Message message, MessageDataWriter mdw, int handle){
         messageBatch.add(message);
         int size = 0;
+        int batchSize = 1000;
+        int batchTimeout = 2000;
         if(messageBatch.size() >= batchSize || (System.currentTimeMillis() - lastSentTime) >= batchTimeout){
             sendBatch(mdw, handle);
             lastSentTime = System.currentTimeMillis();
@@ -51,17 +49,34 @@ public class PubTester {
         }
     }
 
-    public static void main(String[] args){
+    public static void main(String[] args) throws IOException, ParseException {
 
         args = new String[8];
+        Object obj = new JSONParser().parse(new FileReader("arrowhead skeleton/application-skeleton-consumer" +
+                "/src/main/java/eu/arrowhead/application/skeleton/consumer/classes/dds/arguments.json"));
+
+        JSONObject jo = (JSONObject) obj;
         args[0] = "-DCPSBit";
-        args[1] = "0";
+        long dcpsBit = (long) jo.get("DCPSBit");
+        args[1] = String.valueOf(dcpsBit);
         args[2] = "-DCPSConfigFile";
-        args[3] = "/home/ricardo/IdeaProjects/Multiprotocol_Translator/arrowhead skeleton/application-skeleton-consumer/src/main/java/eu/arrowhead/application/skeleton/consumer/classes/dds/tcp2.ini";
-        args[4] = "-r";
-        args[5] = "-w";
+        args[3] = (String) jo.get("DCPSConfigFile");
+        if(jo.get("r") != null)
+            args[4] = "-r";
+        if(jo.get("w") != null)
+            args[5] = "-w";
         args[6] = "-DCPSPendingTimeout";
-        args[7] = "3";
+        long dcpsPendingTimeout = (long) jo.get("DCPSPendingTimeout");
+        args[7] = String.valueOf(dcpsPendingTimeout);
+
+        obj = new JSONParser().parse(new FileReader("arrowhead skeleton/application-skeleton-consumer" +
+                "/src/main/java/eu/arrowhead/application/skeleton/consumer/classes/dds/pubSubConf.json"));
+
+        jo = (JSONObject) obj;
+        long qos = (long) jo.get("qos");
+        long amount = (long) jo.get("amount");
+        String topic = (String) jo.get("topic");
+        String message = (String) jo.get("message");
 
         DomainParticipantFactory domainParticipantFactory = TheParticipantFactory.WithArgs(new StringSeqHolder(args));
         if(domainParticipantFactory == null){
@@ -102,50 +117,69 @@ public class PubTester {
         DataWriterQos dw_qos = new DataWriterQos();
 
         dw_qos.deadline = new DeadlineQosPolicy();
-
+        dw_qos.destination_order = new DestinationOrderQosPolicy();
 
         boolean reliable = true;
         dw_qos.reliability = new ReliabilityQosPolicy();
         dw_qos.deadline = new DeadlineQosPolicy();
         if(qos == 0){
             dw_qos.reliability.kind = ReliabilityQosPolicyKind.from_int(ReliabilityQosPolicyKind._BEST_EFFORT_RELIABILITY_QOS);
-            dw_qos.deadline.period = new Duration_t();
+            dw_qos.deadline.period = new Duration_t(0, 500000000);
+            dw_qos.destination_order.kind = DestinationOrderQosPolicyKind.from_int(DestinationOrderQosPolicyKind
+                    ._BY_RECEPTION_TIMESTAMP_DESTINATIONORDER_QOS);
             reliable = false;
         }else if(qos == 1){
             dw_qos.reliability.kind = ReliabilityQosPolicyKind.from_int(ReliabilityQosPolicyKind._RELIABLE_RELIABILITY_QOS);
-            dw_qos.deadline.period = new Duration_t();
+            dw_qos.deadline.period = new Duration_t(1, 0);
+            dw_qos.destination_order.kind = DestinationOrderQosPolicyKind.from_int(DestinationOrderQosPolicyKind
+                    ._BY_RECEPTION_TIMESTAMP_DESTINATIONORDER_QOS);
+
             // amount = 5;
         }else{
             dw_qos.reliability.kind = ReliabilityQosPolicyKind.from_int(ReliabilityQosPolicyKind._RELIABLE_RELIABILITY_QOS);
-            dw_qos.deadline.period = new Duration_t();
+            dw_qos.deadline.period = new Duration_t(1, 0);
+            dw_qos.destination_order.kind = DestinationOrderQosPolicyKind.from_int(DestinationOrderQosPolicyKind
+                    ._BY_SOURCE_TIMESTAMP_DESTINATIONORDER_QOS);
+
         }
 
         dw_qos.durability = new DurabilityQosPolicy();
-        dw_qos.durability.kind = DurabilityQosPolicyKind.from_int(0);
+        dw_qos.durability.kind = DurabilityQosPolicyKind.from_int(DurabilityQosPolicyKind._VOLATILE_DURABILITY_QOS);
         dw_qos.durability_service = new DurabilityServiceQosPolicy();
-        dw_qos.durability_service.history_kind = HistoryQosPolicyKind.from_int(0);
+        dw_qos.durability_service.history_kind = HistoryQosPolicyKind.from_int(HistoryQosPolicyKind._KEEP_LAST_HISTORY_QOS);
         dw_qos.durability_service.service_cleanup_delay = new Duration_t();
+
         dw_qos.latency_budget = new LatencyBudgetQosPolicy();
         dw_qos.latency_budget.duration = new Duration_t();
+
         dw_qos.liveliness = new LivelinessQosPolicy();
-        dw_qos.liveliness.kind = LivelinessQosPolicyKind.from_int(0);
-        dw_qos.liveliness.lease_duration = new Duration_t();
-        //dw_qos.reliability = new ReliabilityQosPolicy();
+        dw_qos.liveliness.kind = LivelinessQosPolicyKind.from_int(LivelinessQosPolicyKind._AUTOMATIC_LIVELINESS_QOS);
+        dw_qos.liveliness.lease_duration = new Duration_t(5, 0);
+
         dw_qos.reliability.max_blocking_time = new Duration_t();
-        dw_qos.destination_order = new DestinationOrderQosPolicy();
-        dw_qos.destination_order.kind = DestinationOrderQosPolicyKind.from_int(0);
+
         dw_qos.history = new HistoryQosPolicy();
         dw_qos.history.kind = HistoryQosPolicyKind.from_int(0);
+
         dw_qos.resource_limits = new ResourceLimitsQosPolicy();
+        dw_qos.resource_limits.max_samples = 10000;
+        dw_qos.resource_limits.max_samples_per_instance = 100;
+        dw_qos.resource_limits.max_instances = 1000;
+
         dw_qos.transport_priority = new TransportPriorityQosPolicy();
+
         dw_qos.lifespan = new LifespanQosPolicy();
         dw_qos.lifespan.duration = new Duration_t();
+
         dw_qos.user_data = new UserDataQosPolicy();
         dw_qos.user_data.value = new byte[0];
+
         dw_qos.ownership = new OwnershipQosPolicy();
-        dw_qos.ownership.kind = OwnershipQosPolicyKind.from_int(0);
+        dw_qos.ownership.kind = OwnershipQosPolicyKind.from_int(OwnershipQosPolicyKind._SHARED_OWNERSHIP_QOS);
         dw_qos.ownership_strength = new OwnershipStrengthQosPolicy();
+
         dw_qos.writer_data_lifecycle = new WriterDataLifecycleQosPolicy();
+
         dw_qos.representation = new DataRepresentationQosPolicy();
         dw_qos.representation.value = new short[0];
 

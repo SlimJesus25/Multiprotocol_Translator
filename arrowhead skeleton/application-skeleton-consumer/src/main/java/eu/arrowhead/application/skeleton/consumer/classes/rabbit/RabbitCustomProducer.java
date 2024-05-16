@@ -9,6 +9,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.TimeoutException;
@@ -154,7 +156,10 @@ public class RabbitCustomProducer extends IProducer {
     private void produceMessage(String queueName, String message) {
         try {
             outstandingConfirms.put(channel.getNextPublishSeqNo(), message);
-            channel.basicPublish("", queueName, null, message.getBytes());
+            AMQP.BasicProperties basicProperties = new AMQP.BasicProperties().builder()
+                    .messageId(UUID.randomUUID().toString())
+                    .build();
+            channel.basicPublish("", queueName, basicProperties, message.getBytes());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

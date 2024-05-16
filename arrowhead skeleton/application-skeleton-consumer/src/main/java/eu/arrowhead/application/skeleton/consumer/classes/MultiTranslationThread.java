@@ -13,12 +13,15 @@ public class MultiTranslationThread implements Runnable{
     private final String topic;
     private final String message;
     private final CountDownLatch latch;
+    private final CountDownLatch latch2;
 
-    public MultiTranslationThread(IProducer producer, String topic, String message, CountDownLatch latch) {
+    public MultiTranslationThread(IProducer producer, String topic, String message
+            , CountDownLatch latch, CountDownLatch latch2) {
         this.latch = latch;
         this.producer = producer;
         this.topic = topic;
         this.message = message;
+        this.latch2 = latch2;
     }
 
     @Override
@@ -30,7 +33,13 @@ public class MultiTranslationThread implements Runnable{
             throw new RuntimeException(e);
         }
 
-        for(int i=0;i<100000;i++)
-            this.producer.produce(this.topic, this.message);
+        System.out.println("\n\t" + Thread.currentThread() + " producing for " + this.producer);
+
+        for(int i=0;i<500000;i++) {
+            this.producer.produce(this.topic, String.valueOf(i));
+        }
+
+        System.out.println("\n\t" + Thread.currentThread() + " finished...");
+        latch2.countDown();
     }
 }

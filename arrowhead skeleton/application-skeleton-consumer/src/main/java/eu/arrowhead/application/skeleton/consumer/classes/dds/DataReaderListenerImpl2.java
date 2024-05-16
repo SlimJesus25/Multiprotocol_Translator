@@ -14,6 +14,8 @@ public class DataReaderListenerImpl2 extends DDS._DataReaderListenerLocalBase {
 
     private static final int N_EXPECTED = 40;
     private ArrayList<Boolean> counts = new ArrayList<Boolean>(N_EXPECTED);
+    private static int i = 0;
+    private static long begin = 0;
 
     private GuardCondition gc;
 
@@ -37,8 +39,18 @@ public class DataReaderListenerImpl2 extends DDS._DataReaderListenerLocalBase {
 
     public synchronized void on_data_available(DDS.DataReader reader) {
 
-        initialize_counts();
+        // initialize_counts();
 
+        i++;
+
+        if(i == 1)
+            begin = System.currentTimeMillis();
+
+        if(i % 100000 == 0){
+            System.out.println("Cheguei aos 100K em " + (System.currentTimeMillis() - begin));
+        }
+
+        /*
         MessageDataReader mdr = MessageDataReaderHelper.narrow(reader);
         if (mdr == null) {
             System.err.println("ERROR: read: narrow failed.");
@@ -120,6 +132,7 @@ public class DataReaderListenerImpl2 extends DDS._DataReaderListenerLocalBase {
         if (mh.value.count + 1 == expected_count) {
             gc.set_trigger_value(true);
         }
+        */
     }
 
     public void on_requested_deadline_missed(DDS.DataReader reader, DDS.RequestedDeadlineMissedStatus status) {
