@@ -22,7 +22,9 @@ public class JavaRepository implements Repository {
 
     @Override
     public boolean messageExists(String messageId) {
-        return database.containsKey(messageId);
+        if(messageId != null)
+            return database.containsKey(messageId);
+        return true;
     }
 
     @Override

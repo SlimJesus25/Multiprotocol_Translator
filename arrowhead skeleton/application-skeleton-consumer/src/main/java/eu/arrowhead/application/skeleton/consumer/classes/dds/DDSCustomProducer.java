@@ -14,6 +14,7 @@ import eu.arrowhead.application.skeleton.consumer.classes.Utils;
 import org.omg.CORBA.StringSeqHolder;
 import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -33,6 +34,11 @@ public class DDSCustomProducer extends IProducer {
     private int count;
     private final List<Message> messageBatch = new ArrayList<>();
     private long lastSentTime = System.currentTimeMillis();
+    private boolean first = false;
+    private boolean quarter = false;
+    private boolean half = false;
+    private boolean threeQuarters = false;
+    private final boolean[] arr = new boolean[3];
 
     private void addToBatch(Message message, MessageDataWriter mdw, int handle){
         messageBatch.add(message);
@@ -55,6 +61,8 @@ public class DDSCustomProducer extends IProducer {
         super(connectionDetails, settings);
         this.settings = new PubSubSettings(settings);
         count = 1;
+
+        Arrays.fill(arr, true);
 
         args = new String[8];
         args[0] = "-DCPSBit";
@@ -184,8 +192,9 @@ public class DDSCustomProducer extends IProducer {
     @Override
     public void produce(String topic, String message) {
 
-            if (numberOfMessages == 1) {
+            if (numberOfMessages == 1 || first) {
                 utilsID = Utils.initializeCounting();
+                first = false;
             }
 
             numberOfMessages++;
@@ -246,14 +255,20 @@ public class DDSCustomProducer extends IProducer {
             }
              */
 
-            if (this.numberOfMessages == 50000f || this.numberOfMessages == 25000f || this.numberOfMessages == 75000f) {
-                Utils.halfCounting(utilsID);
-            }
+        Utils.checkValue(this.numberOfMessages, quarter, half, threeQuarters, arr, utilsID);
 
+        quarter = arr[0];
+        half = arr[1];
+        threeQuarters = arr[2];
 
-            if (numberOfMessages == 100000f) {
-                Utils.pointReached(utilsID, log);
-                numberOfMessages = 0;
-            }
+        if (numberOfMessages >= 100000) {
+            Utils.pointReached(utilsID, log);
+            this.numberOfMessages -= 100000;
+            first = true;
+            quarter = true;
+            half = true;
+            threeQuarters = true;
+            Arrays.fill(arr, true);
+        }
     }
 }

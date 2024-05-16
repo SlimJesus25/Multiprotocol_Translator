@@ -23,6 +23,7 @@ public class KafkaCustomProducer extends IProducer {
     private int numberOfMessages = 0;
     private long utilsID;
     private final Logger logger = LogManager.getLogger(KafkaCustomProducer.class);
+    private final boolean[] arr = new boolean[3];
     private boolean first = true;
     private boolean quarter = true;
     private boolean half = true;
@@ -34,6 +35,7 @@ public class KafkaCustomProducer extends IProducer {
         loadDefaults(settings);
         producerConfig = new ProducerConfig(Constants.objectifyMap(settings));
         createProducer();
+        Arrays.fill(arr, true);
     }
 
     private void loadDefaults(Map<String,String> settings) {
@@ -85,8 +87,7 @@ public class KafkaCustomProducer extends IProducer {
         if(settings.getQos() == 0)
             numberOfMessages++;
 
-        boolean[] arr = new boolean[3];
-        Utils.checkValue(this.numberOfMessages, quarter, half, threeQuarters, arr, utilsID);
+        Utils.checkValue(numberOfMessages, quarter, half, threeQuarters, arr, utilsID);
 
         quarter = arr[0];
         half = arr[1];
@@ -99,6 +100,7 @@ public class KafkaCustomProducer extends IProducer {
             quarter = true;
             half = true;
             threeQuarters = true;
+            Arrays.fill(arr, true);
         }
     }
 

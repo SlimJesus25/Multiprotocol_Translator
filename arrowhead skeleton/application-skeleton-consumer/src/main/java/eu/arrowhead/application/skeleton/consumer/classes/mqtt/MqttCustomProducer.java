@@ -7,6 +7,8 @@ import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Arrays;
 import java.util.Map;
 
 public class MqttCustomProducer extends IProducer {
@@ -20,10 +22,12 @@ public class MqttCustomProducer extends IProducer {
     private boolean quarter = true;
     private boolean half = true;
     private boolean threeQuarters = true;
+    private final boolean[] arr = new boolean[3];
 
     public MqttCustomProducer(ConnectionDetails connectionDetails, Map<String,String> settings) {
         super(connectionDetails,settings);
         this.settings = new MqttSettings(settings);
+        Arrays.fill(arr, true);
         connect(connectionDetails.getAddress(),connectionDetails.getPort());
     }
 
@@ -109,7 +113,6 @@ public class MqttCustomProducer extends IProducer {
             log.warn("\n" + new RuntimeException(e) + "\n");
         }
 
-        boolean[] arr = new boolean[3];
         Utils.checkValue(this.numberOfMessages, quarter, half, threeQuarters, arr, utilsID);
 
         quarter = arr[0];
@@ -123,6 +126,7 @@ public class MqttCustomProducer extends IProducer {
             quarter = true;
             half = true;
             threeQuarters = true;
+            Arrays.fill(arr, true);
         }
     }
 

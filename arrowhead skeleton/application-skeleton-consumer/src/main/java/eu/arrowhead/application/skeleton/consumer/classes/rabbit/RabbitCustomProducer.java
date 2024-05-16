@@ -7,6 +7,7 @@ import eu.arrowhead.application.skeleton.consumer.classes.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
@@ -28,10 +29,12 @@ public class RabbitCustomProducer extends IProducer {
     private boolean quarter = false;
     private boolean half = false;
     private boolean threeQuarters = false;
+    private final boolean[] arr = new boolean[3];
 
     public RabbitCustomProducer(ConnectionDetails connectionDetails, Map<String,String> settings) {
         super(connectionDetails, settings);
         this.settings = new RabbitConsumerSettings(settings);
+        Arrays.fill(arr, true);
         connect();
     }
 
@@ -136,7 +139,6 @@ public class RabbitCustomProducer extends IProducer {
         }
 
         // At 25%, 50% and 75% this collects information about memory, threads and CPU...
-        boolean[] arr = new boolean[3];
         Utils.checkValue(this.numberOfMessages, quarter, half, threeQuarters, arr, utilsID);
 
         quarter = arr[0];
@@ -150,6 +152,7 @@ public class RabbitCustomProducer extends IProducer {
             quarter = true;
             half = true;
             threeQuarters = true;
+            Arrays.fill(arr, true);
         }
     }
 

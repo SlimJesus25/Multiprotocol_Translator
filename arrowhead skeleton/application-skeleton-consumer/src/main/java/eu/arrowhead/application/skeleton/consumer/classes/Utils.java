@@ -305,8 +305,6 @@ public class Utils {
     public static void checkValue(int numberOfMessages, boolean quarter, boolean half, boolean threeQuarters
             , boolean[] res, long id){
 
-        Arrays.fill(res, true);
-
         if(numberOfMessages >= 25000 && numberOfMessages < 50000 && quarter) {
             res[0] = false;
             Utils.halfCounting(id);
