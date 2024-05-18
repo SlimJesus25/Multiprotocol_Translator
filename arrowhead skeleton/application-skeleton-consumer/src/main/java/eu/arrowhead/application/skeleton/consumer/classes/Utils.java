@@ -1,10 +1,15 @@
 package eu.arrowhead.application.skeleton.consumer.classes;
 
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.management.*;
 import java.time.LocalDateTime;
 import java.util.*;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 
 /**
@@ -315,5 +320,33 @@ public class Utils {
             res[2] = false;
             Utils.halfCounting(id);
         }
+    }
+
+    public static String[] parseJSON(String pathToJSON, String[] args) throws IOException, ParseException {
+        Object obj = new JSONParser().parse(new FileReader(pathToJSON));
+
+        JSONObject jo = (JSONObject) obj;
+
+        String[] finalArgs = new String[args.length * 2];
+
+        int j = 1;
+        for (String arg : args) {
+            finalArgs[j - 1] = arg;
+            try {
+                finalArgs[j] = (String) jo.get(arg.replace("-", ""));
+            } catch (Exception e1) {
+                try {
+                    finalArgs[j] = String.valueOf((long) jo.get(arg.replace("-", "")));
+                } catch (Exception e2) {
+                    try {
+                        // finalArgs[j] = String.valueOf((boolean) jo.get(arg.replace("-", "")));
+                        j--;
+                    } catch (Exception ignored) {
+                    }
+                }
+            }
+            j += 2;
+        }
+        return finalArgs;
     }
 }
