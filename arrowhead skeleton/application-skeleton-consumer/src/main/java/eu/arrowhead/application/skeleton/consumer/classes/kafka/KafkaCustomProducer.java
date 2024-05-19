@@ -65,7 +65,7 @@ public class KafkaCustomProducer extends IProducer {
 
         final ProducerRecord<String, String> record = new ProducerRecord<>(useTopic, messageId, message);
 
-        if (numberOfMessages == 0 || first) {
+        if (numberOfMessages == 0 && first) {
             utilsID = Utils.initializeCounting();
             first = false;
         }

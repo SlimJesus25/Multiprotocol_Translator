@@ -69,7 +69,7 @@ public class MqttCustomProducer extends IProducer {
     @Override
     public void produce(String topic, String message) {
 
-        if (numberOfMessages == 1 || first) {
+        if (numberOfMessages == 1 && first) {
             utilsID = Utils.initializeCounting();
             first = false;
         }
