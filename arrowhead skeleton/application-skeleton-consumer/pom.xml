@@ -15,35 +15,30 @@
 			<groupId>com.OpenDDS</groupId>
 			<artifactId>i2jrt</artifactId>
 			<version>1.0</version>
-			<scope>system</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>com.OpenDDS</groupId>
 			<artifactId>i2jrt_corba</artifactId>
 			<version>1.0</version>
-			<scope>system</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>com.OpenDDS</groupId>
 			<artifactId>messenger_idl_test</artifactId>
 			<version>1.0</version>
-			<scope>system</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>com.OpenDDS</groupId>
 			<artifactId>OpenDDS_DCPS</artifactId>
 			<version>1.0</version>
-			<scope>system</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>com.OpenDDS</groupId>
 			<artifactId>tao_java</artifactId>
 			<version>1.0</version>
-			<scope>system</scope>
 		</dependency>
 
 
