@@ -26,9 +26,22 @@ public class DDSCustomConsumer extends IConsumer {
         this.topic = settings.get("topic");
         this.qos = Integer.parseInt(settings.get("qos"));
 
+        /*
         String pathToJSON = "arrowhead skeleton/application-skeleton-consumer" +
                 "/src/main/java/eu/arrowhead/application/skeleton/consumer/classes/dds/arguments.json";
+         */
 
+        String pathToJSON = "";
+
+        try {
+            String currentPath = new java.io.File(".").getCanonicalPath();
+            if(System.getProperty("os.name").toLowerCase().contains("windows"))
+                pathToJSON = currentPath + "\\arguments.json";
+            else
+                pathToJSON = currentPath + "/arrowhead skeleton/application-skeleton-consumer/src/main/java/eu/arrowhead/application/skeleton/consumer/classes/dds/arguments.json";
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         String[] conf = new String[5];
         conf[0] = "-DCPSBit";
         conf[1] = "-DCPSConfigFile";
@@ -38,6 +51,7 @@ public class DDSCustomConsumer extends IConsumer {
         try {
             this.args = Utils.parseJSON(pathToJSON, conf);
         } catch (IOException | ParseException e) {
+            log.error("Error parsing DDS Custom Consumer arguments JSON file.");
             throw new RuntimeException(e);
         }
     }
