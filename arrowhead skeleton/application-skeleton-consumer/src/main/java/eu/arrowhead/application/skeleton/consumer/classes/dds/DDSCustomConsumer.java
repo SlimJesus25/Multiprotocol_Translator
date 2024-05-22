@@ -38,7 +38,7 @@ public class DDSCustomConsumer extends IConsumer {
             if(System.getProperty("os.name").toLowerCase().contains("windows"))
                 pathToJSON = currentPath + "\\arguments.json";
             else
-                pathToJSON = currentPath + "/arrowhead skeleton/application-skeleton-consumer/src/main/java/eu/arrowhead/application/skeleton/consumer/classes/dds/arguments.json";
+                pathToJSON = currentPath + "/target/arguments.json";
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
