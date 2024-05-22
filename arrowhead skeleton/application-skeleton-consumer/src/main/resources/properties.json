@@ -1,60 +1,30 @@
 {
   "Producers": [{
-    "internal.id": "device02",
-    "protocol" : "kafka",
+    "internal.id": "device01",
+    "protocol" : "dds",
     "additional.props": {
-      "topic": "kafka_topic",
+      "topic": "ABC",
       "connection.timeout": 20,
-      "qos": 1,
-      "client.id": "middleware-consumer"
+      "qos": 2,
+      "client.id": "middleware-producer"
     }
-  },
-    {
-      "internal.id": "device03",
-      "protocol" : "kafka",
-      "additional.props": {
-        "topic": "temperature",
-        "connection.timeout": 20,
-        "qos": 1,
-        "client.id": "middleware-consumer"
-      }
-    },
-    {
-      "internal.id": "device04",
-      "protocol": "dds",
-      "additional.props": {
-        "topic": "cards",
-        "connection.timeout": 20,
-        "qos": 1,
-        "client.id": "middleware-consumer"
-      }
-    }
-  ],
+  }],
   "Consumers": [
     {
       "internal.id": "device05",
       "protocol" : "mqtt",
       "additional.props": {
-        "topic": "rabbit_topic",
-        "client.id" : "middleware-producer",
+        "topic": "CBA",
+        "client.id" : "middleware-consumer",
         "qos": 2
       }
     },
     {
-      "internal.id": "device15",
-      "protocol" : "dds",
-      "additional.props": {
-        "topic": "cards2",
-        "client.id" : "middleware-producer",
-        "qos": 0
-      }
-    },
-    {
       "internal.id": "device06",
-      "protocol" : "mqtt",
+      "protocol" : "kafka",
       "additional.props": {
-        "topic": "mqtt_topic",
-        "client.id" : "middleware-producer",
+        "topic": "CBA",
+        "client.id" : "middleware-consumer",
         "qos": 2
       }
     },
@@ -62,53 +32,25 @@
       "internal.id": "device07",
       "protocol" : "rabbit",
       "additional.props": {
-        "queue": "test123",
-        "client.id" : "middleware-producer",
-        "qos": 1
+        "queue": "CBA",
+        "client.id" : "middleware-consumer",
+        "qos": 2
       }
-    }],
+    }
+    ],
 
-  "Streams": [{
-    "from.producers" : "device02",
+  "Streams": [
+    {
+    "from.producers" : "device01",
     "to.consumers" : "device05"
-  },
+    },
     {
-      "from.producers" : "device02",
+      "from.producers" : "device01",
       "to.consumers" : "device06"
     },
     {
-      "from.producers" : "device03",
-      "to.consumers" : "device05"
-    },
-    {
-      "from.producers" : "device03",
-      "to.consumers" : "device06"
-    },{
-      "from.producers" : "device02",
+      "from.producers" : "device01",
       "to.consumers" : "device07"
-    },{
-      "from.producers" : "device03",
-      "to.consumers" : "device07"
-    },
-    {
-      "from.producers" : "device04",
-      "to.consumers" : "device05"
-    },
-    {
-      "from.producers" : "device04",
-      "to.consumers" : "device06"
-    },
-    {
-      "from.producers" : "device04",
-      "to.consumers" : "device07"
-    },
-    {
-      "from.producers" : "device04",
-      "to.consumers" : "device15"
-    },
-    {
-      "from.producers" : "device03",
-      "to.consumers" : "device15"
     }
   ]
 }
