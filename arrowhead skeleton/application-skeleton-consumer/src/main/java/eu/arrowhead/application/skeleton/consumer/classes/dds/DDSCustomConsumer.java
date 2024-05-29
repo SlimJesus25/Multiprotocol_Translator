@@ -5,9 +5,12 @@ import common.ConnectionDetails;
 import common.IConsumer;
 import common.IProducer;
 import eu.arrowhead.application.skeleton.consumer.classes.Utils;
+import org.json.JSONObject;
+import org.json.JSONTokener;
 import org.json.simple.parser.ParseException;
 import org.slf4j.LoggerFactory;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
@@ -42,6 +45,31 @@ public class DDSCustomConsumer extends IConsumer {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+
+        pathToJSON = "../../../../../../../../resources/arguments.json";
+
+        String[] args = new String[6];
+        try {
+            ClassLoader classLoader = getClass().getClassLoader();
+            InputStream inputStream = classLoader.getResourceAsStream("arguments.json");
+            JSONObject jo = new JSONObject(new JSONTokener(inputStream));
+            int dcpsBit = jo.getInt("DCPSBit");
+            String dcpsConfigFile = jo.getString("DCPSConfigFile");
+
+            args[0] = "-DCPSBit";
+            args[1] = String.valueOf(dcpsBit);
+            args[2] = "-DCPSConfigFile";
+            args[3] = dcpsConfigFile;
+            args[4] = "r";
+            args[5] = "w";
+
+        }catch(NullPointerException ignored){
+
+        }
+
+        this.args = args;
+
+        /*
         String[] conf = new String[5];
         conf[0] = "-DCPSBit";
         conf[1] = "-DCPSConfigFile";
@@ -54,6 +82,7 @@ public class DDSCustomConsumer extends IConsumer {
             log.error("Error parsing DDS Custom Consumer arguments JSON file.");
             throw new RuntimeException(e);
         }
+         */
     }
 
 
