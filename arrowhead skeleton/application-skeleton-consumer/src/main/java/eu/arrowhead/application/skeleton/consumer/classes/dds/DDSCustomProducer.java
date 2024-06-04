@@ -48,12 +48,6 @@ public class DDSCustomProducer extends IProducer {
 
         Arrays.fill(arr, true);
 
-        String[] conf = new String[5];
-        conf[0] = "-DCPSBit";
-        conf[1] = "-DCPSConfigFile";
-        conf[2] = "-r";
-        conf[3] = "-w";
-        conf[4] = "-DCPSPendingTimeout";
         this.args = new String[8];
         try {
             ClassLoader classLoader = getClass().getClassLoader();
