@@ -9,8 +9,14 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.json.simple.parser.ParseException;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 
@@ -52,7 +58,12 @@ public class DDSCustomConsumer extends IConsumer {
         try {
             ClassLoader classLoader = getClass().getClassLoader();
             InputStream inputStream = classLoader.getResourceAsStream("arguments.json");
+            URL a = classLoader.getResource("arguments.json");
+            System.out.println(a.toString());
+            String b = a.getFile();
             JSONObject jo = new JSONObject(new JSONTokener(inputStream));
+            System.out.println(inputStream);
+
             int dcpsBit = jo.getInt("DCPSBit");
             String dcpsConfigFile = jo.getString("DCPSConfigFile");
 
@@ -69,6 +80,7 @@ public class DDSCustomConsumer extends IConsumer {
 
         this.args = args;
 
+            System.out.println(Arrays.toString(args));
         /*
         String[] conf = new String[5];
         conf[0] = "-DCPSBit";

@@ -8,9 +8,13 @@ import common.ConnectionDetails;
 import common.IProducer;
 import eu.arrowhead.application.skeleton.consumer.classes.PubSubSettings;
 import eu.arrowhead.application.skeleton.consumer.classes.Utils;
+import org.json.JSONObject;
+import org.json.JSONTokener;
 import org.json.simple.parser.ParseException;
 import org.slf4j.LoggerFactory;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -50,15 +54,27 @@ public class DDSCustomProducer extends IProducer {
         conf[2] = "-r";
         conf[3] = "-w";
         conf[4] = "-DCPSPendingTimeout";
-
+        this.args = new String[8];
         try {
-            String pathToJSON = "arrowhead skeleton/application-skeleton-consumer" +
-                    "/src/main/java/eu/arrowhead/application/skeleton/consumer/classes/dds/arguments.json";
-            this.args = Utils.parseJSON(pathToJSON,
-                    conf);
-        } catch (IOException | ParseException e){
-            log.error("Error parsing DDS Custom Producer arguments JSON file.");
-            System.exit(1);
+            ClassLoader classLoader = getClass().getClassLoader();
+            InputStream inputStream = classLoader.getResourceAsStream("arguments.json");
+            JSONObject jo = new JSONObject(new JSONTokener(inputStream));
+
+            int dcpsBit = jo.getInt("DCPSBit");
+            String dcpsConfigFile = jo.getString("DCPSConfigFile");
+            int dcpsTimeout = jo.getInt("DCPSPendingTimeout");
+
+            args[0] = "-DCPSBit";
+            args[1] = String.valueOf(dcpsBit);
+            args[2] = "-DCPSConfigFile";
+            args[3] = dcpsConfigFile;
+            args[4] = "r";
+            args[5] = "w";
+            args[6] = "-DCPSPendingTimeout";
+            args[7] = String.valueOf(dcpsTimeout);
+
+        }catch(NullPointerException ignored){
+
         }
 
         this.topic = settings.get("topic");
