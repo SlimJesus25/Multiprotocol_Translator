@@ -27,8 +27,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 @RequestMapping("/api")
 public class Routing {
 
-    private String nomenclature = "";
-
     private final Map<String, IProducer> producers = new ConcurrentHashMap<>();
     private final Object producersLock = new Object();
 
@@ -55,14 +53,20 @@ public class Routing {
 
         ConnectionDetails cd = new ConnectionDetails(req.getBrokerAddress(), Integer.parseInt(req.getBrokerPort()));
 
+        verifyQoS(req.getQos());
+
         Map<String, String> settings = new HashMap<>();
+
         settings.put("qos", String.valueOf(req.getQos()));
         settings.put("client.id", "middleware-producer");
         String internalId = "producer-" + req.getProtocol() + "-" + producerCount.incrementAndGet();
 
         try {
             Constructor<?> c = producerProtocol(req.getProtocol());
-            settings.put(nomenclature, req.getTopic());
+            if(c.getName().contains("Rabbit"))
+                settings.put("queue", req.getTopic());
+            else
+                settings.put("topic", req.getTopic());
             IProducer prod = (IProducer) c.newInstance(cd, settings);
             synchronized (producersLock) {
                 producers.put(internalId, prod);
@@ -88,6 +92,8 @@ public class Routing {
     public ResponseEntity<ConsumerResponseDTO> addConsumer(@RequestBody ConsumerRequestDTO req) {
 
         ConnectionDetails cd = new ConnectionDetails(req.getBrokerAddress(), Integer.parseInt(req.getBrokerPort()));
+
+        verifyQoS(req.getQos());
 
         Map<String, String> settings = new HashMap<>();
         settings.put("qos", String.valueOf(req.getQos()));
@@ -203,9 +209,7 @@ public class Routing {
 
         List<ConsumerResponseDTO> res = new ArrayList<>();
         synchronized (consumersDataLock) {
-            consumersData.forEach((k, v) -> {
-                res.add(v);
-            });
+            consumersData.forEach((k, v) -> res.add(v));
         }
         return new ResponseEntity<>(res, HttpStatus.OK);
     }
@@ -215,9 +219,7 @@ public class Routing {
 
         List<ProducerResponseDTO> res = new ArrayList<>();
         synchronized (producersDataLock) {
-            producersData.forEach((k, v) -> {
-                res.add(v);
-            });
+            producersData.forEach((k, v) -> res.add(v));
         }
         return new ResponseEntity<>(res, HttpStatus.OK);
     }
@@ -277,8 +279,13 @@ public class Routing {
     private void createConsumer(ConnectionDetails cd, String protocol, String topic, Map<String, String> settings,
                                 String internalId, List<IProducer> linkedProducers){
         try {
+
             Constructor<?> c = consumerProtocol(protocol);
-            settings.put(nomenclature, topic);
+            if(c.getName().contains("Rabbit"))
+                settings.put("queue", topic);
+            else
+                settings.put("topic", topic);
+
             IConsumer cons = (IConsumer) c.newInstance(cd, linkedProducers, settings);
             synchronized (consumersLock) {
                 consumers.put(internalId, cons);
@@ -300,5 +307,10 @@ public class Routing {
         synchronized (consumersDataLock) {
             consumersData.remove(internalID);
         }
+    }
+
+    private void verifyQoS(int qos){
+        if(qos < 0 || qos > 2)
+            throw new InvalidQoSException(String.valueOf(qos));
     }
 }
