@@ -1,0 +1,36 @@
+@startuml
+
+actor System as usr
+participant PolyglIoT as mpt
+participant "Broker A" as b2
+participant "Broker B" as b
+
+activate usr
+usr -> mpt : configures property files \n (external publishers and consumers)
+activate mpt
+mpt --> usr
+deactivate mpt
+usr -> mpt : initiates the application
+activate mpt
+mpt -> b2 : establishes communication \n between client(s) and broker(s)
+activate b2
+b2 --> mpt
+deactivate b2
+mpt --> usr
+mpt -> b : consumes published data
+activate b
+b --> mpt
+deactivate b
+mpt -> b2 : produces consumed data
+activate b2
+b2 --> mpt : acknowledges data publish
+deactivate b2
+deactivate mpt
+usr -> b2 : consumes data
+activate b2
+b2 --> usr
+deactivate b2
+deactivate mpt
+deactivate usr
+
+@enduml

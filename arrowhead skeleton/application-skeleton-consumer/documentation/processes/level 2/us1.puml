@@ -1,0 +1,87 @@
+@startuml
+
+actor User as usr
+participant MiddlewareSetup as ms
+participant GeneralProperties as gp
+participant Properties as p
+participant IConsumer as ic
+participant Thread as t
+participant IProducer as ip
+participant ISettings as ise
+participant IRepository as ir
+participant "Broker A" as b
+participant "Broker B" as b2
+
+activate usr
+usr -> gp : configures broker addresses
+activate gp
+gp --> usr
+deactivate gp
+usr -> p : configures protocols, \n topics/queues and QoS levels
+activate p
+p --> usr
+deactivate p
+usr -> ms : initiates the application
+activate ms
+ms -> gp : retrieves information
+activate gp
+gp --> ms
+deactivate gp
+ms -> p : retrieves information
+activate p
+p --> ms
+deactivate p
+ms -> b : establishes connection with broker
+activate b
+b --> ms
+deactivate b
+ms -> b2 : establishes connection with broker
+activate b2
+b2 --> ms
+deactivate b2
+ms -> ip : instantiates internal producers \n based on the configuration files
+activate ip
+ip -> ise : validates parameters
+activate ise
+ise --> ip
+deactivate ise
+ip --> ms
+deactivate ip
+ms -> ic : instantiates internal consumers \n based on the configuration files \n and sends the interested producers
+activate ic
+ic -> ise : validates parameters
+activate ise
+ise --> ic
+deactivate ise
+ic -> t
+activate t
+ic --> ms
+deactivate ic
+ms --> usr
+usr -> b : publish data
+activate b
+b --> usr : acknowledges publish
+deactivate b
+t -> b : consumes data
+activate b
+b --> t
+deactivate b
+t -> ir : checks for duplicated data
+activate ir
+ir --> t
+deactivate ir
+t -> ip : sends consumed data
+activate ip
+ip -> b2 : publishes data
+activate b2
+b2 --> ip : acknowledges publish
+deactivate ip
+deactivate b2
+usr -> b2 : consumes data
+activate b2
+b2 --> usr
+deactivate b2
+deactivate t
+deactivate usr
+
+@enduml

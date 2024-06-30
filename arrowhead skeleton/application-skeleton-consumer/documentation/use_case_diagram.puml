@@ -1,0 +1,21 @@
+@startuml
+
+left to right direction
+
+rectangle PolyglIoT {
+    usecase "UC1 - Produce and specify the respective QoS delivery." as UC1
+    usecase "UC2 - Consume and specify the respective QoS delivery." as UC2
+
+rectangle Arrowhead {
+    usecase "UC3 - Register as a producer." as UC3
+    usecase "UC4 -  Requests to consume for a specific topic and, automatically, find a publisher match." as UC4
+}
+}
+actor "Machine" as Machine <<Machine>>
+
+:Machine: --> (UC1)
+:Machine: --> (UC2)
+:Machine: --> (UC3)
+:Machine: --> (UC4)
+
+@enduml

@@ -1,0 +1,69 @@
+@startuml
+
+actor System as usr
+participant MiddlewareSetup as ms
+participant GeneralProperties as gp
+participant Properties as p
+participant IConsumer as ic
+participant IProducer as ip
+participant ISettings as ise
+participant "DDSCustomConsumer" as dds
+participant MQTTCustomProducer as mqtt
+participant Broker as b
+
+activate usr
+usr -> gp : configures broker addresses
+activate gp
+gp --> usr
+deactivate gp
+usr -> p : configures protocols, \n topics/queues and QoS levels
+activate p
+p --> usr
+deactivate p
+usr -> ms : initiates the application
+activate ms
+ms -> gp : retrieves information
+activate gp
+gp --> ms
+deactivate gp
+ms -> p : retrieves information
+activate p
+p --> ms
+deactivate p
+ms -> ip : instantiates internal producers \n based on the configuration files
+activate ip
+ip -> ise : validates parameters
+activate ise
+ise --> ip
+deactivate ise
+ip -> mqtt : instantiates \n internal producer
+activate mqtt
+mqtt -> b : establishes connection with broker
+activate b
+b --> mqtt
+deactivate b
+mqtt --> ip
+deactivate mqtt
+ip --> ms
+deactivate ip
+ms -> ic : instantiates internal consumers \n based on the configuration files \n and sends the interested producers
+activate ic
+ic -> ise : validates parameters
+activate ise
+ise --> ic
+deactivate ise
+ic -> dds : initiates DDS internal consumer
+activate dds
+ic --> ms
+deactivate ic
+dds -> dds : listens \n for requests
+deactivate ic
+ms --> usr
+deactivate ms
+usr -> dds : publish data
+dds -> dds : consumes data
+dds --> usr : acknowledges publish
+deactivate dds
+deactivate usr
+
+@enduml

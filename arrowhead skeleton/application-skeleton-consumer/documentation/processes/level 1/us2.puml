@@ -1,0 +1,13 @@
+@startuml
+
+actor User as usr
+participant Arrowhead as ah
+
+activate usr
+usr -> ah : wants to publish data \n about subject X in protocol P1 \n with QoS Q1
+activate ah
+ah --> usr :
+deactivate ah
+deactivate usr
+
+@enduml

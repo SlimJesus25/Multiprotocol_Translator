@@ -1,0 +1,26 @@
+@startuml
+
+hide circles
+hide methods
+hide attributes
+
+class "Broker A"{}
+class "Broker B"{}
+class "External Producer"{}
+class "External Consumer"{}
+class "Internal Producer"{}
+class "Internal Consumer"{}
+class PolyglIoT{}
+
+"Internal Consumer" "*" --> "1" "Broker A" : consumes
+"External Producer" "*" --> "1" "Broker A" : produces
+
+"Internal Producer" "*" --> "1" "Broker B" : produces
+"External Consumer" "*" --> "1" "Broker B" : consumes
+
+PolyglIoT --> "1..*" "Internal Producer" : manages
+PolyglIoT --> "1..*" "Internal Consumer" : manages
+
+
+
+@enduml

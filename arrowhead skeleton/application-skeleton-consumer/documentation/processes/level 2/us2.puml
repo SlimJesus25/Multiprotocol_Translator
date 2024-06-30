@@ -1,0 +1,23 @@
+@startuml
+
+actor User as usr
+participant Orchestrator as orc
+participant Authorization as auth
+participant "Service Registry" as sr
+
+activate usr
+usr -> orc : wants to publish data \n about subject X in protocol P1 \n with QoS Q1
+activate orc
+orc -> auth : verifies authorization for this request
+activate auth
+auth --> orc
+deactivate auth
+orc -> sr : registers new publisher
+activate sr
+sr --> orc
+deactivate sr
+orc --> usr
+deactivate orc
+deactivate usr
+
+@enduml

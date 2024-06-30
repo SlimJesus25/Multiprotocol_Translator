@@ -1,0 +1,36 @@
+@startuml
+
+actor User as usr
+participant Arrowhead as ah
+participant Edge4CPS as edge
+participant PolyglIoT as mpt
+participant "Broker" as b
+
+activate usr
+usr -> ah : wants to consume data \n about subject X in protocol P2 \n with QoS Q2
+activate ah
+ah -> edge : sends brokers, topic/queue, \n protocol and QoS information
+activate edge
+edge -> mpt : instantiates sending \n property files
+activate mpt
+mpt -> b : publishes data
+activate b
+b --> mpt : acknowledges publish
+deactivate b
+mpt --> edge
+deactivate mpt
+edge --> ah
+deactivate edge
+ah --> usr
+deactivate ah
+usr -> ah : requests broker \n address and port
+activate ah
+ah --> usr
+deactivate ah
+usr -> b : consumes data
+activate b
+b --> usr
+deactivate b
+deactivate usr
+
+@enduml

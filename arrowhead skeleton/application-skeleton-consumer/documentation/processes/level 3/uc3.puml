@@ -1,0 +1,15 @@
+@startuml
+
+actor System as usr
+participant "Service Registry" as sr
+
+activate usr
+usr -> sr : wants to publish data \n about subject X in protocol P1 \n with QoS Q1
+activate sr
+sr -> sr : registers new publisher
+sr --> usr
+deactivate sr
+
+deactivate usr
+
+@enduml

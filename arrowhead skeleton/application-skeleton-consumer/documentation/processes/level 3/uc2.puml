@@ -1,0 +1,91 @@
+@startuml
+
+actor System as usr
+participant MiddlewareSetup as ms
+participant GeneralProperties as gp
+participant Properties as p
+participant IConsumer as ic
+participant Thread as t
+participant DDSCustomConsumer as dds
+participant IProducer as ip
+participant MQTTCustomProducer as mqtt
+participant ISettings as ise
+participant "Broker" as b2
+
+activate usr
+usr -> gp : configures broker addresses
+activate gp
+gp --> usr
+deactivate gp
+usr -> p : configures protocols, \n topics/queues and QoS levels
+activate p
+p --> usr
+deactivate p
+usr -> ms : initiates the application
+activate ms
+ms -> gp : retrieves information
+activate gp
+gp --> ms
+deactivate gp
+ms -> p : retrieves information
+activate p
+p --> ms
+deactivate p
+ms -> ip : instantiates \n internal producer \n based on the configuration files
+activate ip
+ip -> ise : validates parameters
+activate ise
+ise --> ip
+deactivate ise
+ip -> mqtt : instantiates \n internal producer
+activate mqtt
+mqtt -> b2 : establishes \n connection with broker
+activate b2
+b2 --> mqtt
+deactivate b2
+mqtt --> ip
+deactivate mqtt
+ip --> ms
+deactivate ip
+ms -> ic : instantiates internal consumers \n based on the configuration files \n and sends the interested producers
+activate ic
+ic -> ise : validates parameters
+activate ise
+ise --> ic
+deactivate ise
+ic -> dds : instantiates \n internal consumer
+activate dds
+dds --> ic
+deactivate dds
+ic -> t
+activate t
+ic --> ms
+deactivate ic
+ms --> usr
+deactivate ms
+t -> dds : waits for data
+deactivate t
+activate dds
+dds -> dds : consumes data directly \n from external producer
+dds -> ip : sends data to associated \n internal consumer
+deactivate dds
+activate ip
+ip -> mqtt : sends data
+activate mqtt
+mqtt -> b2 : publishes data
+activate b2
+b2 --> mqtt
+deactivate b2
+mqtt --> ip
+deactivate mqtt
+
+deactivate ip
+deactivate b2
+usr -> b2 : consumes data
+activate b2
+b2 --> usr
+deactivate b2
+deactivate t
+deactivate usr
+
+@enduml

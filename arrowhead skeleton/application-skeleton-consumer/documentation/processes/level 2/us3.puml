@@ -1,0 +1,42 @@
+@startuml
+
+actor User as usr
+participant Orchestrator as orc
+participant Authorization as auth
+participant "Service Registry" as sr
+participant Edge4CPS as edge
+participant PolyglIoT as mpt
+participant "Broker" as b
+
+activate usr
+usr -> orc : wants to consume data \n about subject X in protocol P2 \n with QoS Q2
+activate orc
+orc -> auth : verifies authorization \n for this request
+activate auth
+auth --> orc
+deactivate auth
+orc -> sr : queries for a service with \n publisher definition and \n the same subject X
+activate sr
+sr --> orc
+deactivate sr
+orc -> edge : sends brokers, topic/queue, \n protocol and QoS information
+activate edge
+edge -> mpt : instantiates sending \n property files
+activate mpt
+mpt -> b : publishes data
+activate b
+b --> mpt : acknowledges publish
+deactivate b
+mpt --> edge
+deactivate mpt
+edge --> orc
+deactivate edge
+orc --> usr
+deactivate orc
+usr -> b : consumes data
+activate b
+b --> usr
+deactivate b
+deactivate usr
+
+@enduml
