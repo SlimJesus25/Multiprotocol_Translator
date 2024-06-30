@@ -51,6 +51,8 @@ public class Utils {
     private static final Object timeMapLock = new Object();
     private static final Object terminalOutputLock = new Object();
 
+    private static StringBuffer sb = new StringBuffer();
+
     private synchronized static void addFileWriter(long id) throws IOException {
         fileWriters.put(id, new FileWriter("statistic_logs_" + Thread.currentThread().
                 getContextClassLoader().toString() + Thread.currentThread().getName() + ".log" ));
@@ -209,7 +211,6 @@ public class Utils {
 
     public static long initializeCounting(){
         long myID = incrementIdentifier();
-        // configureLogs(myID);
 
         List<Integer> tcl = new ArrayList<>();
         List<Integer> tpc = new ArrayList<>();
@@ -267,13 +268,10 @@ public class Utils {
     public static void pointReached(long id, Logger log){
 
         long execTime = System.currentTimeMillis() - accessInitialTime(id);
-        StringBuilder sb = new StringBuilder();
         sb.append("Messages per second + ").
                 append(100000f / (execTime / 1000f)).
                 append(" ||| Execution time: ").
                 append(execTime / 1000f);
-
-        // writeToLog(id, sb.toString());
 
         synchronized (terminalOutputLock) {
             if(log != null)
