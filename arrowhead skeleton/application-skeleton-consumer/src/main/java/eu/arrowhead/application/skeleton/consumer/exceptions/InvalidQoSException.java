@@ -3,15 +3,11 @@ package eu.arrowhead.application.skeleton.consumer.exceptions;
 /**
  * @author : Ricardo Venâncio - 1210828
  **/
-public class InvalidQoSException extends IllegalArgumentException {
+public class InvalidQoSException extends RuntimeException {
 
-    private final static long serialVersionUID = 1L;
-    private String errorMessage;
-    public InvalidQoSException (String errorMessage) {
-        this.errorMessage = errorMessage;
+
+    public InvalidQoSException (String qos) {
+        super("Invalid QoS \"" + qos + "\". The supported QoS are 0, 1 or 2!");
     }
 
-    public String errorMessage() {
-        return errorMessage;
-    }
 }
