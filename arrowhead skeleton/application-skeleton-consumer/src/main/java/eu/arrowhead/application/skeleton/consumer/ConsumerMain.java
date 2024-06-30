@@ -3,25 +3,15 @@ package eu.arrowhead.application.skeleton.consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.http.HttpMethod;
 import ai.aitia.arrowhead.application.library.ArrowheadService;
 import eu.arrowhead.common.CommonConstants;
-import eu.arrowhead.common.dto.shared.OrchestrationFlags.Flag;
-import eu.arrowhead.common.dto.shared.OrchestrationFormRequestDTO;
-import eu.arrowhead.common.dto.shared.OrchestrationFormRequestDTO.Builder;
-import eu.arrowhead.common.dto.shared.OrchestrationResponseDTO;
-import eu.arrowhead.common.dto.shared.OrchestrationResultDTO;
-import eu.arrowhead.common.dto.shared.ServiceQueryFormDTO;
-import eu.arrowhead.common.exception.ArrowheadException;
 
 @SpringBootApplication
-@ComponentScan(basePackages = {CommonConstants.BASE_PACKAGE, "ai.aitia", "common", "kafka"}) //TODO: add custom packages if any
-public class ConsumerMain implements ApplicationRunner {
+@ComponentScan(basePackages = {CommonConstants.BASE_PACKAGE, "ai.aitia", "common", "kafka", "eu.arrowhead.application.skeleton.consumer"}) //TODO: add custom packages if any
+public class ConsumerMain /* implements ApplicationRunner */ {
     
     //=================================================================================================
 	// members
@@ -34,6 +24,8 @@ public class ConsumerMain implements ApplicationRunner {
     	SpringApplication.run(ConsumerMain.class, args);
     }
 
+
+	/*
     @Override
 	public void run(final ApplicationArguments args) {
 		//SIMPLE EXAMPLE OF INITIATING AN ORCHESTRATION
@@ -80,4 +72,6 @@ public class ConsumerMain implements ApplicationRunner {
     	arrowheadService.consumeServiceHTTP(String.class, httpMethod, address, port, serviceUri, interfaceName, token, payload, "testkey", "testvalue");
 
 	}
+
+	 */
 }
