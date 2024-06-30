@@ -83,7 +83,8 @@ public class KafkaCustomConsumer extends IConsumer {
         lastMessage = record.value();
         numberOfMessages++;
 
-        this.OnMessageReceived(record.topic(), record.value());
+        if(producerList != null)
+            this.OnMessageReceived(record.topic(), record.value());
     }
 
     public void stop() {

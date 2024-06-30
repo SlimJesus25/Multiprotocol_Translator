@@ -61,7 +61,8 @@ public class DataReaderListenerImpl extends DDS._DataReaderListenerLocalBase {
         int status = mdr.take_next_sample(mh, sih);
 
         // System.out.println("Content: " + mh.value.text + " iteration: " + num_msgs);
-        instance.OnMessageReceived(mh.value.subject, mh.value.text);
+        if(instance != null)
+            instance.OnMessageReceived(mh.value.subject, mh.value.text);
 
         /*
         if (status == RETCODE_OK.value) {

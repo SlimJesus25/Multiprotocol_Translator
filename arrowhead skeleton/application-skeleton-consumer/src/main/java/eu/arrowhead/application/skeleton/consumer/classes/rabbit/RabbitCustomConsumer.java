@@ -50,7 +50,8 @@ public class RabbitCustomConsumer extends IConsumer {
 
         DeliverCallback deliverCallback = (consumerTag, delivery) -> {
             String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
-            OnMessageReceived(settings.getRoutingKey(),message);
+            if(producerList != null)
+                OnMessageReceived(settings.getRoutingKey(),message);
             lastMessage = message;
             numberOfMessages++;
         };
