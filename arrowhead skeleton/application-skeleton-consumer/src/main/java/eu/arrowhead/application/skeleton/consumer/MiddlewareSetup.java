@@ -45,11 +45,13 @@ public class MiddlewareSetup implements Runnable {
     @Override
     public void run() {
         try {
-            createMaps();
-            loadDefaultBrokers();
-            loadProperties();
-            startInternalConsumers();
-        } catch ( JSONException | IOException e) {
+            if(!initializationStart()) {
+                createMaps();
+                loadDefaultBrokers();
+                loadProperties();
+                startInternalConsumers();
+            }
+        } catch (JSONException | IOException e) {
             throw new RuntimeException(e);
         }
     }
