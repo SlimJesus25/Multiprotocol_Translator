@@ -54,6 +54,23 @@ public class MiddlewareSetup implements Runnable {
         }
     }
 
+    private boolean initializationStart() throws IOException {
+
+        InputStream inputStream;
+
+        if (generalPropertiesFile.exists()) {
+            inputStream = Files.newInputStream(generalPropertiesFile.toPath());
+            logger.info("Loading general from external properties");
+        } else {
+            ClassLoader classLoader = getClass().getClassLoader();
+            inputStream = classLoader.getResourceAsStream("general_properties.json");
+        }
+
+        JSONObject jo = new JSONObject(new JSONTokener(inputStream));
+
+        return jo.getBoolean("flexible_api");
+    }
+
 
     /**
      * Creates the mapping between broker name and Consumer / Producer class to use.
@@ -188,7 +205,6 @@ public class MiddlewareSetup implements Runnable {
         }
 
         JSONObject jo = new JSONObject(new JSONTokener(inputStream));
-
         Map<String, IProducer> producerMap = new HashMap<>();
         Map<String, IConsumer> consumerMap = new HashMap<>();
 
@@ -198,14 +214,11 @@ public class MiddlewareSetup implements Runnable {
 
         for (int i = 0; i < clientConsumers.length(); i++) {
             JSONObject consumer = clientConsumers.getJSONObject(i);
-
             String id = consumer.getString("internal.id");
-
             String protocol = consumer.getString("protocol");
-
             Map<String, String> props = new HashMap<>();
-
             JSONObject settings = consumer.getJSONObject("additional.props");
+
             for (Iterator it = settings.keys(); it.hasNext(); ) {
                 String o = (String) it.next();
                 props.put(o, String.valueOf(settings.get(o)));
@@ -220,54 +233,41 @@ public class MiddlewareSetup implements Runnable {
         }
 
         // Create consumers for the client's producers
-
         JSONArray clientProducers = jo.getJSONArray("Producers");
-
         logger.info("Loading client producers");
 
         for (int i = 0; i < clientProducers.length(); i++) {
             JSONObject producer = clientProducers.getJSONObject(i);
-
             String id = producer.getString("internal.id");
-
             String protocol = producer.getString("protocol");
-
             Map<String, String> props = new HashMap<>();
-
             JSONObject settings = producer.getJSONObject("additional.props");
+
             for (Iterator it = settings.keys(); it.hasNext(); ) {
                 String o = (String) it.next();
                 props.put(o, String.valueOf(settings.get(o)));
             }
-
             if (!providers.containsKey(protocol)) {
                 ConnectionDetails cd = requestConnectionDetails(protocol);
                 providers.put(protocol,cd);
             }
-
             consumerMap.put(id,createConsumer(providers.get(protocol),new ArrayList<IProducer>(),protocol,props));
         }
 
         // Link the created consumers and producers
-
         JSONArray streamsArray = jo.getJSONArray("Streams");
-
         logger.info("Loading device streams");
 
         for (int i = 0 ; i < streamsArray.length(); i++) {
 
             JSONObject stream = streamsArray.getJSONObject(i);
-
             String producers = stream.getString("from.producers");
-
             String consumers = stream.getString("to.consumers");
 
             for (String consumerAux : producers.split(",")) {
                 IConsumer consumer = consumerMap.get(consumerAux);
-
-                if (!consumerInstances.contains(consumer)) {
+                if (!consumerInstances.contains(consumer))
                     consumerInstances.add(consumer);
-                }
 
                 for (String producerAux : consumers.split(",")) {
                     IProducer producer = producerMap.get(producerAux);
