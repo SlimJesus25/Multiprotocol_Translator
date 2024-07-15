@@ -1,0 +1,7 @@
+{
+  "DCPSBit" : 0,
+  "DCPSConfigFile" : "/home/arrowhead/IdeaProjects/Multiprotocol_Translator/arrowhead skeleton/application-skeleton-consumer/src/main/java/eu/arrowhead/application/skeleton/consumer/classes/dds/tcp.ini",
+  "r" : true,
+  "w" : true,
+  "DCPSPendingTimeout" : 3
+}
