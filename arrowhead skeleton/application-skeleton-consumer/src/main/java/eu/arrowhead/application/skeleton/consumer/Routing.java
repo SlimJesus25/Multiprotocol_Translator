@@ -8,6 +8,12 @@ import eu.arrowhead.application.skeleton.consumer.exceptions.ConsumerNotFoundExc
 import eu.arrowhead.application.skeleton.consumer.exceptions.InvalidQoSException;
 import eu.arrowhead.application.skeleton.consumer.exceptions.ProducerNotFoundException;
 import eu.arrowhead.application.skeleton.consumer.exceptions.UnsupportedProtocolException;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
@@ -23,6 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author : Ricardo Venâncio - 1210828
  **/
 
+@Tag(name = "PolyglIoT API", description = "PolyglIoT's API endpoints")
 @RestController
 @RequestMapping("/api")
 public class Routing {
@@ -48,6 +55,19 @@ public class Routing {
     private final Logger logger = LogManager.getLogger(Routing.class);
     private final Object loggerLocker = new Object();
 
+    @Operation(
+            summary = "Adds an internal producer to PolyglIoT.",
+            description = "Adds an internal producer to the running PolyglIoT instance by specifying:\n" +
+                    " - Broker Address - The broker address that this producer must produce data.\n" +
+                    " - Broker Port - The broker port that this producer must produce data.\n" +
+                    " - Topic - The topic that this producer must produce data.\n" +
+                    " - QoS - Quality of Service that this producer should produce (must be between 0 and 2).\n" +
+                    " - Protocol - Communication protocol that this producer should produce (must be either 'mqtt', 'dds', 'rabbitmq' or 'kafka').\n" ,
+            tags = { "Producer", "POST" })
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", content = { @Content(schema = @Schema(implementation = ProducerResponseDTO.class), mediaType = "application/json") }),
+            @ApiResponse(responseCode = "404", content = { @Content(schema = @Schema()) }),
+            @ApiResponse(responseCode = "500", content = { @Content(schema = @Schema()) }) })
     @PostMapping("/addProducer")
     public ResponseEntity<ProducerResponseDTO> addProducer(@RequestBody ProducerRequestDTO req) {
 
@@ -88,6 +108,22 @@ public class Routing {
         return new ResponseEntity<>(res, HttpStatus.CREATED);
     }
 
+    @Operation(
+            summary = "Adds an internal consumer to PolyglIoT.",
+            description = "Adds an internal consumer to the running PolyglIoT instance by specifying:\n" +
+                    " - Broker Address - The broker address that this producer must produce data.\n" +
+                    " - Broker Port - The broker port that this producer must produce data.\n" +
+                    " - Topic - The topic that this producer must produce data.\n" +
+                    " - QoS - Quality of Service that this producer should produce (must be between 0 and 2).\n" +
+                    " - Protocol - Communication protocol that this producer should produce (must be either 'mqtt', " +
+                    "'dds', 'rabbitmq' or 'kafka').\n" +
+                    " - Producers - List of producers internal IDs (previously created) that should be linked to this " +
+                    "consumer. Note that the internal ID is always returned upon a producer/consumer successfull creation." ,
+            tags = { "Consumer", "POST" })
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", content = { @Content(schema = @Schema(implementation = ConsumerResponseDTO.class), mediaType = "application/json") }),
+            @ApiResponse(responseCode = "404", content = { @Content(schema = @Schema()) }),
+            @ApiResponse(responseCode = "500", content = { @Content(schema = @Schema()) }) })
     @PostMapping("/addConsumer")
     public ResponseEntity<ConsumerResponseDTO> addConsumer(@RequestBody ConsumerRequestDTO req) {
 
@@ -132,6 +168,17 @@ public class Routing {
         return new ResponseEntity<>(res, HttpStatus.CREATED);
     }
 
+    @Operation(
+            summary = "Updates producers associations from a consumer.",
+            description = "Updates the producers that the specified consumer must redirect messages. The following attributes:\n" +
+                    " - consumerId - Internal ID from the desired consumer.\n" +
+                    " - keepOldProducers - It either maintains the previously associated producers or remove them.\n" +
+                    " - newProducers - List of new producers to link to this consumer.\n" ,
+            tags = { "Consumer", "PUT" })
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", content = { @Content(schema = @Schema(implementation = UpdateConsumerAssociationsDTO.class), mediaType = "application/json") }),
+            @ApiResponse(responseCode = "404", content = { @Content(schema = @Schema()) }),
+            @ApiResponse(responseCode = "500", content = { @Content(schema = @Schema()) }) })
     @PutMapping("/updateConsumerAssociations")
     public ResponseEntity<String> updateConsumerAssociations(@RequestBody UpdateConsumerAssociationsDTO req) {
         IConsumer consumer = findConsumerByInternalID(req.getConsumerId());
@@ -143,7 +190,7 @@ public class Routing {
         ConsumerResponseDTO data;
 
         synchronized (consumersDataLock) {
-            prodList = consumer.producerList;
+            prodList = req.keepOldProducers() ? consumer.producerList : new ArrayList<>();
             dtoProds = consumersData.get(req.getConsumerId()).getProducers();
             data = consumersData.get(req.getConsumerId());
         }
@@ -176,6 +223,16 @@ public class Routing {
         return new ResponseEntity<>("Consumer was successfully updated!", HttpStatus.OK);
     }
 
+
+    @Operation(
+            summary = "Grabs specific information about a consumer.",
+            description = "Retrieves specific information about a previously created consumer. The following attribute: \n" +
+                    " - id - Internal ID from the consumer intended to search." ,
+            tags = { "Consumer", "GET" })
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", content = { @Content(schema = @Schema(implementation = ConsumerResponseDTO.class), mediaType = "application/json") }),
+            @ApiResponse(responseCode = "404", content = { @Content(schema = @Schema()) }),
+            @ApiResponse(responseCode = "500", content = { @Content(schema = @Schema()) }) })
     @GetMapping("/consumerInfo/{id}")
     public ResponseEntity<ConsumerResponseDTO> consumerInfo(@PathVariable String id){
 
@@ -190,6 +247,15 @@ public class Routing {
         return new ResponseEntity<>(res, HttpStatus.OK);
     }
 
+    @Operation(
+            summary = "Grabs specific information about a producer.",
+            description = "Retrieves specific information about a previously created producer. The following attribute: \n" +
+                    " - id - Internal ID from the producer intended to search." ,
+            tags = { "Producer", "GET" })
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", content = { @Content(schema = @Schema(implementation = ProducerResponseDTO.class), mediaType = "application/json") }),
+            @ApiResponse(responseCode = "404", content = { @Content(schema = @Schema()) }),
+            @ApiResponse(responseCode = "500", content = { @Content(schema = @Schema()) }) })
     @GetMapping("/producerInfo/{id}")
     public ResponseEntity<ProducerResponseDTO> producerInfo(@PathVariable String id){
 
@@ -204,6 +270,14 @@ public class Routing {
         return new ResponseEntity<>(res, HttpStatus.OK);
     }
 
+    @Operation(
+            summary = "Grabs specific information about all consumers.",
+            description = "Retrieves specific information about all previously created consumers." ,
+            tags = { "Consumer", "GET" })
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", content = { @Content(schema = @Schema(implementation = ConsumerResponseDTO.class), mediaType = "application/json") }),
+            @ApiResponse(responseCode = "404", content = { @Content(schema = @Schema()) }),
+            @ApiResponse(responseCode = "500", content = { @Content(schema = @Schema()) }) })
     @GetMapping("/consumersInfo")
     public ResponseEntity<List<ConsumerResponseDTO>> consumersInfo(){
 
@@ -214,6 +288,14 @@ public class Routing {
         return new ResponseEntity<>(res, HttpStatus.OK);
     }
 
+    @Operation(
+            summary = "Grabs specific information about all producers.",
+            description = "Retrieves specific information about all previously created producers." ,
+            tags = { "Producers", "GET" })
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", content = { @Content(schema = @Schema(implementation = ProducerResponseDTO.class), mediaType = "application/json") }),
+            @ApiResponse(responseCode = "404", content = { @Content(schema = @Schema()) }),
+            @ApiResponse(responseCode = "500", content = { @Content(schema = @Schema()) }) })
     @GetMapping("/producersInfo")
     public ResponseEntity<List<ProducerResponseDTO>> producersInfo(){
 
