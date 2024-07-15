@@ -52,7 +52,7 @@ public class PubTester {
         args[3] = "-w";
         args[4] = "-DCPSPendingTimeout";
         args = Utils.parseJSON("arrowhead skeleton/application-skeleton-consumer"
-                + "/src/main/java/eu/arrowhead/application/skeleton/consumer/classes/dds/arguments.json", args);
+                + "/src/main/java/eu/arrowhead/application/skeleton/consumer/classes/dds/arguments2.json", args);
 
         String[] values = new String[4];
         values[0] = "qos";
