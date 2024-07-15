@@ -1,4 +1,6 @@
 {
+  "flexible_api": "true",
+
   "arrowhead_enabled": "false",
 
   "default_brokers" :
