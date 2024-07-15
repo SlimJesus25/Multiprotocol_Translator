@@ -10,16 +10,14 @@ import org.omg.CORBA.StringSeqHolder;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- *
- * Note: This class won't be a problem when concurrency comes to mind, because DDS won't let a machine be more than one
- * entity (publisher or subscriber). Meaning this that only one instance is going to run here and there is no need to
- * synchronize things.
- */
+
 public class DataInstantiation {
 
     private static DomainParticipant dp;
     private static Topic top;
+
+    private static final Object dpLock = new Object();
+    private static final Object topLock = new Object();
 
     public static DataWriter instantiateDataWriter(String[] dpfArgs, String topic, int qos, org.slf4j.Logger log){
 
@@ -27,12 +25,16 @@ public class DataInstantiation {
 
         commonInstantiates(dpfArgs, topic, log);
 
-        Publisher pub = dp.create_publisher(PUBLISHER_QOS_DEFAULT.get(), null,
-                DEFAULT_STATUS_MASK.value);
-        if (pub == null) {
-            errMsg = "ERROR: Publisher creation failed";
-            log.error(errMsg);
-            throw new DDSException(errMsg);
+        Publisher pub;
+
+        synchronized (dpLock) {
+            pub = dp.create_publisher(PUBLISHER_QOS_DEFAULT.get(), null,
+                    DEFAULT_STATUS_MASK.value);
+            if (pub == null) {
+                errMsg = "ERROR: Publisher creation failed";
+                log.error(errMsg);
+                throw new DDSException(errMsg);
+            }
         }
 
         DataWriterQos dw_qos = new DataWriterQos();
@@ -123,10 +125,13 @@ public class DataInstantiation {
 
         DataWriterListenerImpl dwListener = new DataWriterListenerImpl(log);
 
-        DataWriter dataWriter = pub.create_datawriter(top,
-                qosh.value,
-                dwListener,
-                DEFAULT_STATUS_MASK.value);
+        DataWriter dataWriter;
+        synchronized (topLock) {
+            dataWriter = pub.create_datawriter(top,
+                    qosh.value,
+                    dwListener,
+                    DEFAULT_STATUS_MASK.value);
+        }
         if (dataWriter == null) {
             errMsg = "ERROR: DataWriter creation failed";
             log.error(errMsg);
@@ -148,30 +153,36 @@ public class DataInstantiation {
             throw new DDSException(errMsg);
         }
 
-        dp = dpf.create_participant(1,
-                PARTICIPANT_QOS_DEFAULT.get(), null, DEFAULT_STATUS_MASK.value);
+        synchronized (dpLock) {
+            dp = dpf.create_participant(1,
+                    PARTICIPANT_QOS_DEFAULT.get(), null, DEFAULT_STATUS_MASK.value);
 
-        if (dp == null) {
-            errMsg = "Error creating Domain Participant";
-            log.error(errMsg);
-            throw new DDSException(errMsg);
+            if (dp == null) {
+                errMsg = "Error creating Domain Participant";
+                log.error(errMsg);
+                throw new DDSException(errMsg);
+            }
         }
 
         MessageTypeSupportImpl servant = new MessageTypeSupportImpl();
-        if (servant.register_type(dp, "") != RETCODE_OK.value) {
-            errMsg = "Register type failed!";
-            log.error(errMsg);
-            throw new DDSException(errMsg);
-        }
-        top = dp.create_topic(topic,
-                servant.get_type_name(),
-                TOPIC_QOS_DEFAULT.get(),
-                null,
-                DEFAULT_STATUS_MASK.value);
-        if (top == null) {
-            errMsg = "ERROR: Topic creation failed";
-            log.error(errMsg);
-            throw new DDSException(errMsg);
+        synchronized (dpLock) {
+                if (servant.register_type(dp, "") != RETCODE_OK.value) {
+                    errMsg = "Register type failed!";
+                    log.error(errMsg);
+                    throw new DDSException(errMsg);
+                }
+                synchronized (topLock) {
+                top = dp.create_topic(topic,
+                        servant.get_type_name(),
+                        TOPIC_QOS_DEFAULT.get(),
+                        null,
+                        DEFAULT_STATUS_MASK.value);
+                if (top == null) {
+                    errMsg = "ERROR: Topic creation failed";
+                    log.error(errMsg);
+                    throw new DDSException(errMsg);
+                }
+            }
         }
     }
 
@@ -183,8 +194,11 @@ public class DataInstantiation {
         String errMsg;
         commonInstantiates(dpfArgs, topic, log);
 
-        Subscriber sub = dp.create_subscriber(SUBSCRIBER_QOS_DEFAULT.get(),
-                null, DEFAULT_STATUS_MASK.value);
+        Subscriber sub;
+        synchronized (dpLock) {
+            sub = dp.create_subscriber(SUBSCRIBER_QOS_DEFAULT.get(),
+                    null, DEFAULT_STATUS_MASK.value);
+        }
         if (sub == null) {
             errMsg = "ERROR: Subscriber creation failed";
             log.error(errMsg);
@@ -271,12 +285,15 @@ public class DataInstantiation {
         ws.attach_condition(gc);
         listener.set_guard_condition(gc);
 
-        DataReader dr = sub.create_datareader(top,
-                qosh.value,
-                listener,
-                DEFAULT_STATUS_MASK.value);
-        if (!reliable) {
-            listener.set_expected_count(1);
+        DataReader dr;
+        synchronized (topLock) {
+            dr = sub.create_datareader(top,
+                    qosh.value,
+                    listener,
+                    DEFAULT_STATUS_MASK.value);
+            if (!reliable) {
+                listener.set_expected_count(1);
+            }
         }
 
         if (dr == null) {
