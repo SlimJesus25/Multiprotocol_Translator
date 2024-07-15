@@ -6,10 +6,12 @@ public class UpdateConsumerAssociationsDTO {
 
     private String consumerId;
     private List<String> newProducers;
+    private Boolean keepOldProducers;
 
-    public UpdateConsumerAssociationsDTO(String consumerId, List<String> newProducers) {
+    public UpdateConsumerAssociationsDTO(String consumerId, List<String> newProducers, Boolean keepOldProducers) {
         this.consumerId = consumerId;
         this.newProducers = newProducers;
+        this.keepOldProducers = keepOldProducers;
     }
 
     public String getConsumerId() {
@@ -26,5 +28,13 @@ public class UpdateConsumerAssociationsDTO {
 
     public void setNewProducers(List<String> newProducers) {
         this.newProducers = newProducers;
+    }
+
+    public boolean keepOldProducers() {
+        return keepOldProducers;
+    }
+
+    public void keepOldProducers(Boolean keepOldProducers) {
+        this.keepOldProducers = keepOldProducers;
     }
 }
