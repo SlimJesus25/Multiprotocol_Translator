@@ -26,12 +26,18 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
+ * This class acts as Routing + Controller. It has all the endpoints (with respective documentation available on swagger
+ * page) that the API offer.
+ * It's notable to say that synchronization issues are handled here. For example, if two requests are made ate the same
+ * time, it's guaranteed that there is not going to have any race condition due to the fine-grained mechanism
+ * implemented.
  * @author : Ricardo Venâncio - 1210828
  **/
 
 @Tag(name = "PolyglIoT API", description = "PolyglIoT's API endpoints")
 @RestController
 @RequestMapping("/api")
+
 public class Routing {
 
     private final Map<String, IProducer> producers = new ConcurrentHashMap<>();

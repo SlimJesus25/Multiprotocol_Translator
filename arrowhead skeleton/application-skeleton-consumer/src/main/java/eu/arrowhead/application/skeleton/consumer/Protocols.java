@@ -9,6 +9,10 @@ import eu.arrowhead.application.skeleton.consumer.classes.mqtt.MqttCustomProduce
 import eu.arrowhead.application.skeleton.consumer.classes.rabbit.RabbitCustomConsumer;
 import eu.arrowhead.application.skeleton.consumer.classes.rabbit.RabbitCustomProducer;
 
+/**
+ * Supported protocols by PolyglIoT. It has constants with the respective classes.
+ * @author : Ricardo Venâncio - 1210828
+ */
 public class Protocols {
     public final static Class<DDSCustomProducer> DDS_PRODUCER = DDSCustomProducer.class;
     public final static Class<DDSCustomConsumer> DDS_CONSUMER = DDSCustomConsumer.class;

@@ -1,57 +1,85 @@
 # Multiprotocol Translator
 
-This repository contains a Multiprotocol Middleware Translator, capable of redirecting messages between the MQTT, Kafka and AMQP protocols, allowing the User to customize the connection as they please, as well as offering an implementation of Message Delivery Semantics for every protocol (that is not MQTT, since it's already implemented).
+This repository contains a Multiprotocol Middleware Translator as known as PolyglIoT, capable of **redirecting messages
+between the MQTT, Kafka, AMQP and DDS communication protocols.**
+Allows the User to customize the connection as they please, as well as offering an implementation of **Message Delivery 
+Semantics for every protocol.**
 
-The "Multiprotocol Middleware Translator for IoT" document goes over the work done to get to this project, including study, analysis, and a deeper dive over the code that makes it.
+## Set up the project
+
+First things first, it is recommended to read PolyglIoT's report to have a better understanding of this project, 
+otherwise it is going to be challenging and complex to relate things.
+
+### Software Versions
+
+ | Software                     | Version |
+ |------------------------------|---------|
+ | Java                         | 11.0.16 |
+ | Eclipse Paho MQTT            | 1.2.5   |
+ | Apache Kafka                 | 3.2.3   |
+ | RabbitMQ                     | 5.9.0   |
+ | OpenDDS                      | 3.28    |
+ | Orchestrator (Arrowhead)     | 4.6.0   |
+ | Authorization (Arrowhead)    | 4.6.0   |
+ | Service Registry (Arrowhead) | 4.6.0   |
+
+### Prerequisites
+
+ In order to be able to execute PolyglIoT successfully, there are several software components that need to be installed 
+ and configured, as such as:
+ - OpenDDS: it is recommended to follow strictly the official OpenDDS's GitHub repository documentation () because it 
+might be challenging to set OpenDDS with JNI;
+ - Arrowhead: it is recommended to install the three core services (Orchestrator, Authorization and Service Registry);
+ - Edge4CPS: it is recommended to follow () to install and configure this software properly.
+
+#### OpenDDS Tips
+
+The following commands represent a simple example on how to install and configure OpenDDS properly. The example is using Linux 
+Mint:
+1. Download OpenDDS 3.28, save it on "Downloads" directory and change your directory to the downloaded file.
+2. Install C++ compiler with "$ sudo apt-get install g++".
+3. Install git with "$ sudo apt-get install git".
+4. Start configuring and transpiling the files with "$ ./configure --java --compiler /path/to/g++". Use "$ which g++" to 
+check the path.
+5. "$ make".
+6. Retrieve the content from the generated file "setenv.sh" and paste it on the end of "~/.bashrc".
+7. Use "$ source ~/.bashrc" to update the current terminal.
+8. Change directory to "DDS_ROOT/ACE_Wrappers/bin" and run "$ ./mwc.pl -type gnuace"
+9. Run "$ make"
+10. Finally, it is also needed to add these jar to the IDE. There are two simple alternatives, add it to the local
+ maven repository or add manually the jar files in the project structure. In IntelIJ, go to "Project Structure" > 
+ "Dependencies" > "Add new JARs or directories". There are 5 JAR files that should exist and their paths should be:
+    - OpenDDS-3.28/lib/tao_java.jar
+    - OpenDDS-3.28/lib/OpenDDS_DCPS.jar
+    - OpenDDS-3.28/lib/i2jrt_corba.jar
+    - OpenDDS-3.28/lib/i2jrt.jar
+    - OpenDDS-3.28/java/tests/messenger/messenger_idl/messenger_idl_test.jar 
+
+    <br> To check if everything is properly configured, compilation process won't bother about DDS related classes. It might be
+    needed to add the JAR files to classpath, however it is just a click, since IDE is capable of handle that automatically.
+
 
 ## How to run
 
-1. Clone the repository
-2. Travel to the "arrowhead skeleton/application-skeleton-consumer" directory and run "mvn install -DskipTests"
-3. Once the build is complete, place the resulting .jar (found in resources) in a directory like this:
-    - application.jar
-    - properties (folder)
-      - properties.json
-      - general_properties.json
+1. Clone the repository.
+2. Follow "Prerequisites" topic's instruction to be able to run PolyglIoT. Even to execute in it most basic form, 
+OpenDDS must be installed and configured.
+3. There are two alternatives of startup (configurable on "src/main/resources/general_properties.json", 
+on "flexible_api" field) and it must be set to false for static execution, or true for dynamic execution:
+   1. Run based on a configuration file (static): When PolyglIoT runs statically, it retrieves information 
+from "src/main/resources/properties.json" file. Information related to producers, consumers and linkage between 
+consumers and producers. Static run is useful when is already known in advance all the relevant information. This allows
+PolyglIoT to be more efficient. If there is some kind of update necessity, static alternative is not scalable enough.
+   2. Run REST API (dynamic): There is a REST API listening to requests on port 8080 (documentation about end points on
+"localhost:8080/swagger-ui/index.html"). This allows Create, Read, Update and Delete (CRUD) in real-time, allowing 
+scalability. This option must be used when PolyglIoT is working with Arrowhead and/or Edge4CPS.
+4. Still on "general_properties" file, it is relevant to say that information related to "default_brokers" is only 
+necessary to the static execution. Here, is indicated, for each communication protocol, the broker IP address and port.
+This allows PolyglIoT to create client instances to establish connection with the respective broker(s).
+5. There is an important DDS file named "properties" and the "DCPSConfigFile" field must be replaced by the actual path.
+6. Related to "DCPSConfigFile", the .ini file (use "tcp.ini" because the used protocol for communication is TCP) must
+be properly configured with the machine's IP address and port. 
+7. Everything is configured and ready so execute. Start ConsumerMain.
 
-An example of both of these files can be found in the resources folder. If you do not correctly create the folder like this, the application will default to them.
-
-The general_properties file simply needs you to specify if you are using arrowhead (and if so, to fill out the application.properties file beforehand), and to input the default addresses for each broker you are using.
-
-In properties.json, you can list the Producers and Consumers you are using, and between which you wish to create the translation for. The following quote from the accompannying .pdf might help you fill it out:
-
-> **Internal ID** – This field defines a unique identifier for the device so the Middleware can know
-which devices are supposed to be connected. The Internal ID is only used inside the
-Middleware, it has no connection to the ID of the Producer or Consumer itself.
->
-> **Protocol** - Refers to the messaging protocol this device is producing/consuming to/from.
->
-> **Additional Props** - These concern the properties of the equivalent consumer/producer the
-application will create to communicate with the user’s device, and not necessarily the device
-itself (the user’s device may, for example, produce messages with a QoS of 2, but the user may
-declare for its Middleware consumer equivalent to receive messages with a QoS of 0) (...)
-> 
-> **Streams** - With all the equivalent Consumers/Producers created, the application will assign to
-each internal Consumer a list of Producers, as specified in this entry.
-
-5. Now run the jar, and start publishing some messages!
-
-If the translations do not seem to be working, you may run the tests to try to identify what's wrong. These use the broker information available at the general_properties file to make sure the translation is happening as it's supposed to. If they don't correctly run, it might just be your brokers that's wrong. (Note that these tests expect an easy broker without authentication. If you do have it, stick to testing with the application itself)
-
-Pay attention to the logs outputted by the application. All the Producers and Consumers will let you know once they succesfully connect. As well as any errors while trying to do so.
-
-## How to add a new protocol (or a new Producer and Consumer)
-
-1. Clone the repository
-2. Paste the Classes for your Producer and Consumer of the protocol anywhere in the project. They must contain code to Consume a message and obtain its contents, and to produce a new message.
-3. Go to the "MiddlewareSetup" class, under the "eu.arrowhead.application.skeleton.consumer" package.
-4. Go to the "createMaps" method, and add or replace your classes. The "key" value is whatever the application should use to identify your protocol. The actual value is the path to your class.
-5. Extend the IProducer and IConsumer classes in yours, respectively
-
-    The .pdf has more information about this, but basically:
-
-    - The Map<String,String> that comes in the constructor contains the list of properties defined in the "additional.props" field of the properties.json file.
-    - Producer's "produce(topic,message)" method must contain the code to produce a new message to that particular topic (or exchange or whatever) with that particular message.
-    - Consumer's "OnMessageReceived(topic,message)" method must be called whenever a new message is to be processed. It will make a call to all the IProducer's linked to this IConsumer to produce a new message.
-    - The ConnectionDetails class contains the address and port you are to connect to.
-6. Congratulations. You can now translate messages between the MQTT, Kafka, AMQP, and whatever protocol you just added! Or replaced.
+Extra: You might use PubTester or SubTester (both located on "dds" directory) to act as external producer or external 
+consumer. Configure "pubSubConf.json" and "arguments.json" to set up topics, amount of messages (to produce), etc.
