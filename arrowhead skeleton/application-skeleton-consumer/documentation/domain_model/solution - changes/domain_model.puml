@@ -1,0 +1,36 @@
+@startuml
+
+hide circles
+hide methods
+hide attributes
+
+class "Broker"{}
+class "External Producer"{}
+class "External Consumer"{}
+class "Internal Producer"{}
+class "Internal Consumer"{}
+class "Orchestrator"{}
+class "Service Registry"{}
+class "Authorization"{}
+class PolyglIoT{}
+
+"Internal Consumer" "*" --> "1" "Broker" : consumes
+"External Producer" "*" --> "1" "Broker" : produces
+
+"Internal Producer" "*" --> "1" "Broker" : produces
+"External Consumer" "*" --> "1" "Broker" : consumes
+
+PolyglIoT *-- "*" "Internal Producer"
+PolyglIoT *-- "*" "Internal Consumer"
+
+"External Consumer" "*" --> "1" "Orchestrator" : creates producer
+"External Producer" "*" --> "1" "Orchestrator" : announces consumer
+
+"Orchestrator" "1" -> "1" "Authorization" : requests to verify request authorization
+"Orchestrator" "1" --> "1" "Service Registry" : requests data/services/systems
+"Orchestrator" "1" --> "1" "PolyglIoT" : requests to create/alter/delete producer/consumer
+
+"Broker" "*" <-- "1" "Service Registry" : stores information
+"PolyglIoT" "1" <-- "1" "Service Registry" : stores information
+
+@enduml
