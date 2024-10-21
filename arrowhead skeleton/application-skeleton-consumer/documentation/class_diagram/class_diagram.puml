@@ -1,0 +1,94 @@
+@startuml
+
+
+left to right direction
+
+skinparam linetype ortho
+
+class JavaRepository{
+ - database
+}
+
+abstract class IConsumer{
+ - producerList
+ - numberOfMessages
+ - lastMessage
+ - OnMessageReceived()
+}
+
+abstract class IProducer{
+ - abstract produce()
+ - consumerTopic
+ }
+
+class KafkaCustomProducer{
+ - producer
+ - producerConfig
+ }
+
+class KafkaCustomConsumer{
+ - consumer
+ - consumerConfig
+ - settings
+ - offsets
+ - logger
+}
+
+class MqttCustomProducer{
+ - client
+ - settings
+ }
+
+class MqttCustomConsumer{
+ - mqttClient
+ - messageListener
+ - settings
+ - logger
+ }
+
+class RabbitCustomProducer{
+ - channel
+ - settings
+ - outstandingConfirms
+}
+
+class RabbitCustomConsumer{
+ - channel
+ - logger
+ - settings
+}
+
+class DDSCustomProducer{
+ - messageBatch
+ - settings
+ - lastSent
+ }
+class DDSCustomConsumer{
+ - topic
+ - qos
+ - args
+ - logger
+ }
+
+class ConnectionDetails{
+ - address
+ - port
+}
+
+KafkaCustomProducer --|> IProducer
+DDSCustomProducer --|> IProducer
+RabbitCustomProducer --|> IProducer
+MqttCustomProducer --|> IProducer
+
+KafkaCustomConsumer --|> IConsumer
+MqttCustomConsumer --|> IConsumer
+DDSCustomConsumer --|> IConsumer
+RabbitCustomConsumer --|> IConsumer
+
+IConsumer --> "1" ConnectionDetails
+IProducer --> " 1" ConnectionDetails
+
+KafkaCustomConsumer ---> "1" JavaRepository
+RabbitCustomConsumer ---> "1" JavaRepository
+DDSCustomConsumer ---> "1" JavaRepository
+@enduml
