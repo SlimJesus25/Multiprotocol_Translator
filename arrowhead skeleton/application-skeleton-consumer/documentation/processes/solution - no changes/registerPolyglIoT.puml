@@ -1,0 +1,17 @@
+@startuml
+
+actor System as usr
+participant "Service Registry" as sr
+
+activate usr
+usr -> sr : wants to register \n PolyglIoT service \n (IP address and port)
+activate sr
+alt service already exists
+sr --> usr : error: service already exists
+else service does not exists
+sr --> usr : service created successfully
+end alt
+deactivate sr
+deactivate usr
+
+@enduml

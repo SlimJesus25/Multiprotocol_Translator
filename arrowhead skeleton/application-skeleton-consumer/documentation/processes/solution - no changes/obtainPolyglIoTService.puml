@@ -1,0 +1,22 @@
+@startuml
+
+actor System as usr
+participant Orchestrator as orc
+participant Authorization as auth
+participant "Service Registry" as sr
+
+activate usr
+usr -> orc : wants to obtain \n PolyglIoT address
+activate orc
+orc -> auth : verifies authorization \n for this request
+activate auth
+auth --> orc
+deactivate auth
+orc -> sr : searches for \n PolyglIoT service
+activate sr
+sr --> orc
+deactivate sr
+orc --> usr
+deactivate usr
+
+@enduml

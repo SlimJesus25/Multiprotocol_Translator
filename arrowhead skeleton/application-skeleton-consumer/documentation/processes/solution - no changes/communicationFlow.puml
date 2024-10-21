@@ -1,0 +1,30 @@
+@startuml
+
+actor "System 1" as usr1
+participant "Broker A" as ba
+participant PolyglIoT as mpt
+participant "Broker B" as bb
+actor "System 2" as usr2
+
+activate usr1
+activate mpt
+activate ba
+activate bb
+activate usr2
+
+usr1 -> ba : produces data using \n protocol Y1, for topic Y2
+ba -> mpt : spreads data to consumer
+mpt --> ba : (if reliable QoS, acknowledges)
+ba --> usr1 : (if reliable QoS, acknowledges)
+mpt -> bb : produces data using \n protocol X1, for topic X2
+bb -> usr2 : spreads data to consumer
+usr2 --> bb : (if reliable QoS, acknowledges)
+bb --> mpt : (if reliable QoS, acknowledges)
+
+deactivate usr2
+deactivate bb
+deactivate ba
+deactivate mpt
+deactivate usr1
+
+@enduml

@@ -1,0 +1,19 @@
+@startuml
+
+actor System as usr
+participant PolyglIoT as mpt
+participant "Broker B" as bb
+participant "Broker A" as ba
+
+activate usr
+usr -> mpt : wants to create \n a(n) (internal) consumer C,\n with QoS Y1, protocol Y2,\n topic X3, broker B and\n producer P associated
+activate mpt
+mpt -> bb : establishes connection\n as a client
+activate bb
+bb --> mpt
+deactivate bb
+mpt --> usr
+deactivate mpt
+deactivate usr
+
+@enduml
