@@ -25,4 +25,7 @@ public class Protocols {
 
     public final static Class<RabbitCustomConsumer> RABBIT_CONSUMER = RabbitCustomConsumer.class;
     public final static Class<RabbitCustomProducer> RABBIT_PRODUCER = RabbitCustomProducer.class;
+
+    public final static Integer MAX_QOS_ALLOWED = 2;
+    public final static Integer MIN_QOS_ALLOWED = 0;
 }
