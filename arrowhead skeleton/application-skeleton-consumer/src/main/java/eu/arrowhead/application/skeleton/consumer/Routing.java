@@ -312,9 +312,40 @@ public class Routing {
         return new ResponseEntity<>(res, HttpStatus.OK);
     }
 
-    @DeleteMapping("/delete/{id}")
-    public void deleteProducer(@PathVariable String id) {
+    @DeleteMapping("/deleteProducer/{id}")
+    public ResponseEntity<ProducerResponseDTO> deleteProducer(@PathVariable String id) {
 
+        ProducerResponseDTO res;
+
+        synchronized (producersLock){
+            if(producers.remove(id) == null)
+                throw new ProducerNotFoundException(id);
+        }
+
+        synchronized (producersDataLock){
+            res = producersData.remove(id);
+        }
+
+        producerCount.decrementAndGet();
+
+        return new ResponseEntity<>(res, HttpStatus.OK);
+    }
+
+    @DeleteMapping("/deleteConsumer/{id}")
+    public ResponseEntity<ConsumerResponseDTO> deleteConsumer(@PathVariable String id) {
+
+        ConsumerResponseDTO res;
+
+        synchronized (consumersDataLock) {
+            res = consumersData.get(id);
+        }
+
+        if(res == null)
+            throw new ConsumerNotFoundException(id);
+
+        removeConsumer(id);
+
+        return new ResponseEntity<>(res, HttpStatus.OK);
     }
 
     private IProducer findProducerByInternalID(String internalID){
@@ -395,10 +426,11 @@ public class Routing {
         synchronized (consumersDataLock) {
             consumersData.remove(internalID);
         }
+        consumerCount.decrementAndGet();
     }
 
     private void verifyQoS(int qos){
-        if(qos < 0 || qos > 2)
+        if(qos < Protocols.MIN_QOS_ALLOWED || qos > Protocols.MAX_QOS_ALLOWED)
             throw new InvalidQoSException(String.valueOf(qos));
     }
 }
