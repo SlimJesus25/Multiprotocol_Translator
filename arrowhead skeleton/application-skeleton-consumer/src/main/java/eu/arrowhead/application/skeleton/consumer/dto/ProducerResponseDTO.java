@@ -1,11 +1,19 @@
 package eu.arrowhead.application.skeleton.consumer.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class ProducerResponseDTO {
+    @JsonProperty("internalID")
     private String internalID;
+    @JsonProperty("brokerAddress")
     private String brokerAddress;
+    @JsonProperty("brokerPort")
     private String brokerPort;
+    @JsonProperty("topic")
     private String topic;
+    @JsonProperty("qos")
     private int qos;
+    @JsonProperty("protocol")
     private String protocol;
 
     public ProducerResponseDTO(String internalID, String brokerAddress, String brokerPort, String topic, int qos, String protocol) {
